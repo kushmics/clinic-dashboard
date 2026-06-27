@@ -26,21 +26,23 @@ def _find(items, analyte):
 
 def test_critical_potassium_is_urgent_via_sgh():
     d = _run("Potassium 6.5 mmol/L (3.5-5.1) H\nSodium 138 mmol/L (135-145)")
-    assert d["urgency"] == "urgent"
+    # 5-level acuity: a critical value is life-threatening -> immediate (L1).
+    assert d["urgency"] == "immediate"
     k = _find(d["abnormals"], "potassium")
     assert k and k["flag"] == "critical" and k["direction"] == "high"
     assert k["threshold_source"]["table"] == "SGH" and k["threshold_source"]["threshold"] == 5.7
     # Sodium 138 is inside its printed range -> normal, not flagged.
     assert _find(d["normals"], "sodium")
-    print("✓ critical potassium -> urgent, SGH-sourced; normal sodium kept")
+    print("✓ critical potassium -> immediate, SGH-sourced; normal sodium kept")
 
 
 def test_printed_range_drives_non_critical_flag():
     d = _run("Haemoglobin 11.2 g/dL 13.0-17.0")  # report prints its own range
     hb = _find(d["abnormals"], "haem")
     assert hb and hb["flag"] == "low" and hb["threshold_source"]["table"] == "report"
-    assert d["urgency"] == "soon"
-    print("✓ report's printed range used; low Hb -> soon")
+    # 5-level acuity: a non-critical abnormal flag maps to urgent (L3).
+    assert d["urgency"] == "urgent"
+    print("✓ report's printed range used; low Hb -> urgent")
 
 
 def test_nuh_fallback_and_provisional_when_sex_unknown():

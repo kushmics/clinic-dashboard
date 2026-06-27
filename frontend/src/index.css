@@ -1502,3 +1502,118 @@ th {
 .letter-action.send { background: #1f7a4d; border-color: #1f7a4d; }
 .letter-action.send:hover:not(:disabled) { background: #1a6a42; }
 .letter-action.sent { background: #dff4e8; color: #23613b; border-color: #bfe6cf; }
+
+/* ============================================================
+   Patient ID scanner (CV/OCR intake) — folded into Step 1 intake
+   ============================================================ */
+.identity-extraction {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e6ed;
+}
+
+.panel-heading.compact {
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.panel-heading.compact h4 { margin: 0; }
+
+.confidence-badge,
+.field-confidence {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  border-radius: 999px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.confidence-badge { min-height: 26px; padding: 0 10px; font-size: 0.72rem; }
+.field-confidence { padding: 1px 7px; font-size: 0.64rem; }
+.confidence-badge.high,   .field-confidence.high   { background: #e6f5ea; color: #1b6b3a; }
+.confidence-badge.medium, .field-confidence.medium { background: #fff4d9; color: #8a6d00; }
+.confidence-badge.low,    .field-confidence.low    { background: #ffe1dd; color: #842f25; }
+
+.identity-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+/* Click-anywhere upload, matching the lab/x-ray drop zones */
+.identity-upload {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  border: 1px dashed #4a6478;
+  border-radius: 8px;
+  background: #111820;
+  overflow: hidden;
+  color: #b9c8d6;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 140ms ease;
+}
+.identity-upload:hover { border-color: #7bd6e8; }
+.identity-upload img { width: 100%; height: 100%; max-height: 360px; object-fit: contain; display: block; }
+.identity-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+.identity-review {
+  border: 1px solid #dbe4ec;
+  border-radius: 8px;
+  background: #fbfdff;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.identity-review-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.identity-review-header strong { overflow-wrap: anywhere; }
+.identity-review-header span { color: #607080; font-size: 0.82rem; font-weight: 800; }
+
+.review-required {
+  border: 1px solid #f5c2c7;
+  background: #fdecea;
+  color: #842029;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.identity-fields { margin: 0; display: grid; gap: 10px; }
+.identity-fields > div {
+  border: 1px solid #e6edf3;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 9px 11px;
+}
+.identity-fields dt {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  color: #637283; font-size: 0.74rem; font-weight: 800; text-transform: uppercase;
+}
+.identity-fields dd { margin: 4px 0 0; color: #1f2e3f; font-weight: 700; }
+.identity-fields small { display: block; margin-top: 3px; color: #7a8a99; font-size: 0.74rem; }
+
+.identity-warnings { margin: 0; padding-left: 18px; color: #8a6d00; font-size: 0.83rem; }
+.identity-warnings li { margin-bottom: 4px; }
+
+.apply-details-button {
+  margin-top: auto;
+  min-height: 44px;
+  border: 1px solid #1f6f83;
+  border-radius: 8px;
+  background: #1f6f83;
+  color: #ffffff;
+  font-weight: 800;
+}
+.apply-details-button:hover:not(:disabled) { background: #1b6273; }
+.apply-details-button:disabled { background: #cdd8e1; border-color: #cdd8e1; color: #6b7b8a; }
+
+@media (max-width: 980px) {
+  .identity-grid { grid-template-columns: 1fr; }
+}

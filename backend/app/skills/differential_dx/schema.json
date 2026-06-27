@@ -1,6 +1,26 @@
 {
   "type": "object",
   "properties": {
+    "case_summary": {
+      "type": "object",
+      "properties": {
+        "patient_context": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "age": { "type": ["number", "integer", "null"] },
+            "sex": { "type": "string" },
+            "id": { "type": "string" }
+          }
+        },
+        "clinical_text": { "type": "string" },
+        "symptoms": { "type": "array", "items": { "type": "string" } },
+        "lab_summary": { "type": "string" },
+        "lab_observations": { "type": "array", "items": { "type": "string" } },
+        "imaging_findings": { "type": "array", "items": { "type": "string" } },
+        "context_gaps": { "type": "array", "items": { "type": "string" } }
+      }
+    },
     "differentials": {
       "type": "array",
       "items": {
@@ -35,7 +55,8 @@
         "required": ["condition", "likelihood"]
       }
     },
-    "red_flags": { "type": "array", "items": { "type": "string" } }
+    "red_flags": { "type": "array", "items": { "type": "string" } },
+    "observations": { "type": "object" }
   },
   "required": ["differentials"]
 }

@@ -63,6 +63,12 @@ export default function App() {
   const [xrayFile, setXrayFile] = useState(null);
   const [isAnalyzingXray, setIsAnalyzingXray] = useState(false);
 
+  // CV/OCR patient-ID intake — extract identity fields for staff to verify.
+  const [patientDocumentDraft, setPatientDocumentDraft] = useState(null);
+  const [patientDocumentPreviewUrl, setPatientDocumentPreviewUrl] = useState("");
+  const [patientDocumentFileName, setPatientDocumentFileName] = useState("");
+  const [isExtractingPatientDocument, setIsExtractingPatientDocument] = useState(false);
+
   const [authToken, setAuthToken] = useState(() => localStorage.getItem(AUTH_TOKEN_STORAGE_KEY) ?? "");
   const [doctorName, setDoctorName] = useState(() => localStorage.getItem(DOCTOR_NAME_STORAGE_KEY) ?? "");
   const [authError, setAuthError] = useState("");
@@ -251,6 +257,10 @@ Clinician reviewer`,
     setStatus("");
     if (xrayPreviewUrl.startsWith("blob:")) URL.revokeObjectURL(xrayPreviewUrl);
     setXrayPreviewUrl("");
+    setPatientDocumentDraft(null);
+    setPatientDocumentFileName("");
+    if (patientDocumentPreviewUrl.startsWith("blob:")) URL.revokeObjectURL(patientDocumentPreviewUrl);
+    setPatientDocumentPreviewUrl("");
   }
 
   async function loadPatient(id) {
@@ -380,6 +390,47 @@ Clinician reviewer`,
     }
   }
 
+  // ── Patient-ID document intake (CV/OCR) ───────────────────────────────
+  async function handlePatientDocumentUpload(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !patient) return;
+    setPatientDocumentFileName(file.name);
+    setPatientDocumentDraft(null);
+    if (patientDocumentPreviewUrl.startsWith("blob:")) URL.revokeObjectURL(patientDocumentPreviewUrl);
+    setPatientDocumentPreviewUrl(file.type.startsWith("image/") ? URL.createObjectURL(file) : "");
+    setIsExtractingPatientDocument(true);
+
+    const body = new FormData();
+    body.append("file", file);
+    try {
+      const res = await authFetch("/api/ingestion/patient-document", { method: "POST", body });
+      if (!res.ok) throw new Error(`Patient document extraction failed (${res.status})`);
+      const result = await res.json();
+      setPatientDocumentDraft(result.draft);
+      addAudit("AI", "Extracted patient details", "ID document fields ready for staff review");
+    } catch (err) {
+      setPatientDocumentDraft(createEmptyPatientDocumentDraft(err.message));
+      addAudit("System", "Patient detail extraction failed", err.message);
+    } finally {
+      setIsExtractingPatientDocument(false);
+    }
+  }
+
+  // Staff-confirmed fields update the active case header in-session. This is
+  // CV-assisted intake review, not automatic identity verification.
+  function handleApplyPatientDetails(draft) {
+    if (!patient) return;
+    setPatient((prev) => ({
+      ...prev,
+      name: draft.patient_name || prev.name,
+      id: draft.patient_id || prev.id,
+      age: draft.age ?? prev.age,
+      sex: normalizeSex(draft.sex) || prev.sex,
+    }));
+    addAudit("Staff", "Applied patient details", "Reviewed CV extraction and updated the active case header");
+  }
+
   function handleXraySelect(file) {
     setXrayFile(file);
     setGeneratedImagingDraft(null);
@@ -473,7 +524,20 @@ Clinician reviewer`,
   function renderStep() {
     switch (currentStep) {
       case "intake":
-        return <CaseIntakePanel patient={patient} status={status} onUpload={handleUpload} urgency={urgency} />;
+        return (
+          <CaseIntakePanel
+            patient={patient}
+            status={status}
+            onUpload={handleUpload}
+            urgency={urgency}
+            patientDocumentDraft={patientDocumentDraft}
+            patientDocumentFileName={patientDocumentFileName}
+            patientDocumentPreviewUrl={patientDocumentPreviewUrl}
+            isExtractingPatientDocument={isExtractingPatientDocument}
+            onPatientDocumentUpload={handlePatientDocumentUpload}
+            onApplyPatientDetails={handleApplyPatientDetails}
+          />
+        );
       case "lab":
         return <LabTriagePanel draft={activeLabDraft} />;
       case "imaging":
@@ -689,8 +753,26 @@ function AuthScreen({ error, onSignIn, requireToken = true }) {
   );
 }
 
-function CaseIntakePanel({ patient, status, onUpload, urgency }) {
+function CaseIntakePanel({
+  patient,
+  status,
+  onUpload,
+  urgency,
+  patientDocumentDraft,
+  patientDocumentFileName,
+  patientDocumentPreviewUrl,
+  isExtractingPatientDocument,
+  onPatientDocumentUpload,
+  onApplyPatientDetails,
+}) {
   if (!patient) return null;
+  const hasApplicableDetails = Boolean(
+    patientDocumentDraft?.patient_name ||
+      patientDocumentDraft?.patient_id ||
+      patientDocumentDraft?.age ||
+      patientDocumentDraft?.sex
+  );
+
   return (
     <section className="support-panel intake-panel">
       <div className="panel-heading">
@@ -724,6 +806,158 @@ function CaseIntakePanel({ patient, status, onUpload, urgency }) {
           </div>
         </dl>
       </div>
+
+      <div className="identity-extraction">
+        <div className="panel-heading compact">
+          <div>
+            <p className="eyebrow">Computer-vision intake</p>
+            <h4>Patient ID scanner</h4>
+          </div>
+          {patientDocumentDraft && (
+            <span className={`confidence-badge ${patientDocumentDraft.confidence}`}>
+              {patientDocumentDraft.confidence} confidence
+            </span>
+          )}
+        </div>
+
+        <div className="identity-grid">
+          <label className="identity-upload">
+            {patientDocumentPreviewUrl ? (
+              <img src={patientDocumentPreviewUrl} alt="Patient document preview" />
+            ) : (
+              <span className="scan-dropzone-prompt">
+                <strong>Click anywhere to scan an ID or document</strong>
+                <small>Identity card, report, or booklet — fields extract automatically.</small>
+              </span>
+            )}
+            {isExtractingPatientDocument && <span className="scan-analyzing">Extracting…</span>}
+            <input accept="image/*,.pdf" type="file" onChange={onPatientDocumentUpload} disabled={isExtractingPatientDocument} />
+          </label>
+
+          <div className="identity-review">
+            <div className="identity-review-header">
+              <strong>{patientDocumentFileName || "No document scanned yet"}</strong>
+              {isExtractingPatientDocument && <span>Extracting…</span>}
+            </div>
+
+            {patientDocumentDraft ? (
+              <>
+                {patientDocumentDraft.needs_review && (
+                  <div className="review-required">Review required before applying to the case</div>
+                )}
+
+                <dl className="identity-fields">
+                  <IdentityField label="Document" value={patientDocumentDraft.document_type || "Unknown"} />
+                  <IdentityField
+                    confidence={getFieldConfidence(patientDocumentDraft, "patient_name")}
+                    evidence={getExtractionEvidence(patientDocumentDraft, "patient_name")}
+                    label="Name"
+                    value={patientDocumentDraft.patient_name}
+                  />
+                  <IdentityField
+                    confidence={getFieldConfidence(patientDocumentDraft, "patient_id")}
+                    evidence={getExtractionEvidence(patientDocumentDraft, "patient_id")}
+                    label={patientDocumentDraft.patient_id_type || "Patient ID"}
+                    value={patientDocumentDraft.patient_id}
+                  />
+                  <IdentityField
+                    confidence={getFieldConfidence(patientDocumentDraft, "date_of_birth")}
+                    evidence={getExtractionEvidence(patientDocumentDraft, "date_of_birth")}
+                    label="Date of birth"
+                    value={patientDocumentDraft.date_of_birth}
+                  />
+                  <IdentityField
+                    confidence={getFieldConfidence(patientDocumentDraft, "age")}
+                    evidence={getExtractionEvidence(patientDocumentDraft, "age")}
+                    label="Age"
+                    value={patientDocumentDraft.age ? `${patientDocumentDraft.age}y` : ""}
+                  />
+                  <IdentityField
+                    confidence={getFieldConfidence(patientDocumentDraft, "sex")}
+                    evidence={getExtractionEvidence(patientDocumentDraft, "sex")}
+                    label="Sex"
+                    value={patientDocumentDraft.sex}
+                  />
+                  <IdentityField label="Image quality" value={patientDocumentDraft.source_quality} />
+                </dl>
+
+                {patientDocumentDraft.warnings?.length > 0 && (
+                  <ul className="identity-warnings">
+                    {patientDocumentDraft.warnings.map((warning) => (
+                      <li key={warning}>{warning}</li>
+                    ))}
+                  </ul>
+                )}
+
+                <button
+                  className="apply-details-button"
+                  disabled={isExtractingPatientDocument || !hasApplicableDetails}
+                  type="button"
+                  onClick={() => onApplyPatientDetails(patientDocumentDraft)}
+                >
+                  Apply reviewed details
+                </button>
+              </>
+            ) : (
+              <p className="muted-note">
+                Scans an ID or clinical document and uses CV/OCR to pre-fill patient details.
+                Staff confirm the fields before applying them to the active case.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
     </section>
   );
+}
+
+function IdentityField({ confidence, evidence, label, value }) {
+  return (
+    <div>
+      <dt>
+        <span>{label}</span>
+        {confidence && <em className={`field-confidence ${confidence}`}>{confidence}</em>}
+      </dt>
+      <dd>{formatIdentityValue(value)}</dd>
+      {evidence && <small>{evidence}</small>}
+    </div>
+  );
+}
+
+function formatIdentityValue(value) {
+  if (value === null || value === undefined || value === "") return "Not detected";
+  return String(value);
+}
+
+function getFieldConfidence(draft, field) {
+  return draft?.field_confidence?.[field] || "";
+}
+
+function getExtractionEvidence(draft, field) {
+  return draft?.extraction_evidence?.[field] || "";
+}
+
+function normalizeSex(value) {
+  const text = String(value || "").trim().toLowerCase();
+  if (["f", "female", "woman"].includes(text)) return "F";
+  if (["m", "male", "man"].includes(text)) return "M";
+  return "";
+}
+
+function createEmptyPatientDocumentDraft(message) {
+  return {
+    document_type: "unknown",
+    patient_name: "",
+    patient_id: "",
+    patient_id_type: "",
+    date_of_birth: "",
+    age: null,
+    sex: "",
+    source_quality: "poor",
+    confidence: "low",
+    field_confidence: { patient_name: "low", patient_id: "low", date_of_birth: "low", age: "low", sex: "low" },
+    extraction_evidence: { patient_name: "", patient_id: "", date_of_birth: "", age: "", sex: "" },
+    needs_review: true,
+    warnings: [message],
+  };
 }

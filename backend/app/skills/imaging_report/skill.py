@@ -156,10 +156,30 @@ class ImagingReportSkill(Skill):
         draft.setdefault("impression", "")
         draft.setdefault("urgency", "routine")
 
-        # The vision model speaks routine/soon/urgent; normalise onto the
-        # shared 5-level acuity scale.
-        urgency = acuity.from_legacy(draft.get("urgency"))
+        # ── Step 4b: deterministic urgency scoring ─────────────────────
+        from app.skills.imaging_report.urgency import score_urgency
+
+        urgency_result = score_urgency(
+            findings=draft["findings"],
+            impression=draft.get("impression", ""),
+            regions_of_interest=draft.get("regions_of_interest"),
+            context=data.context,
+        )
+        # triage_label is Title-Case ("Non-Urgent"); lower() yields the same
+        # hyphenated slugs the shared acuity scale + UI already speak.
+        urgency = urgency_result.triage_label.lower()
         draft["urgency"] = urgency
+        draft["triage"] = {
+            "level": urgency_result.triage_level,
+            "label": urgency_result.triage_label,
+            "color": urgency_result.triage_color,
+            "target_minutes": urgency_result.target_minutes,
+            "base_score": urgency_result.base_score,
+            "composite": urgency_result.composite,
+            "modifiers": urgency_result.modifiers,
+            "triggers": urgency_result.triggers,
+            "breakdown": urgency_result.finding_scores,
+        }
 
         # ── Step 5: annotate image with ROIs ────────────────────────────
         annotated_path: str | None = None

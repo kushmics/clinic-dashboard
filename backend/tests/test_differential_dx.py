@@ -29,9 +29,10 @@ def test_uses_lab_triage_context_instead_of_reparsing_text():
         SkillInput(text="", context={"lab_triage": lab_triage, "disable_evidence_search": True})
     )
 
-    assert out.urgency == "urgent"
+    assert out.urgency == "emergency"
     assert out.draft["observations"]["k"]["value"] == 6.7
     assert out.draft["red_flags"] == ["Potassium at or above 6.5 mmol/L"]
+    assert out.draft["case_summary"]["lab_observations"] == ["Potassium: 6.7 mmol/L (high)"]
 
 
 def test_next_steps_are_evidence_backed_with_exa_citations(monkeypatch):
@@ -54,6 +55,7 @@ def test_next_steps_are_evidence_backed_with_exa_citations(monkeypatch):
     )
 
     first = out.draft["differentials"][0]
+    assert "fatigue" in out.draft["case_summary"]["symptoms"]
     assert first["condition"] == "Iron deficiency anemia"
     assert first["next_steps"]
     assert all(isinstance(step, dict) for step in first["next_steps"])
