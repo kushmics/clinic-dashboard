@@ -1,0 +1,53 @@
+{
+  "red_flags": [
+    {
+      "code": "hyperkalemia_severe",
+      "name": "Severe hyperkalemia",
+      "rule": {
+        "lab": "k",
+        "op": "ge",
+        "value": 6.5,
+        "units": "mmol/L"
+      },
+      "urgency": "urgent",
+      "message": "Potassium at or above 6.5 mmol/L"
+    },
+    {
+      "code": "severe_anemia",
+      "name": "Severely low hemoglobin",
+      "rule": {
+        "lab": "hb",
+        "op": "lt",
+        "value": 7,
+        "units": "g/dL"
+      },
+      "urgency": "urgent",
+      "message": "Hemoglobin below 7 g/dL"
+    },
+    {
+      "code": "alt_extremely_high",
+      "name": "Severely elevated ALT",
+      "rule": {
+        "lab": "alt",
+        "op": "fold_ge",
+        "value": 10,
+        "uln": 40
+      },
+      "urgency": "urgent",
+      "message": "ALT at least 10 × ULN"
+    },
+    {
+      "code": "chest_pain_high_risk",
+      "name": "Chest pain with high risk features",
+      "rule": {
+        "text_contains": [
+          "crushing chest pain",
+          "radiation to left arm",
+          "diaphoresis"
+        ]
+      },
+      "urgency": "urgent",
+      "message": "High risk chest pain features mentioned"
+    }
+  ]
+}

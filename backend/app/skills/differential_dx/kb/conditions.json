@@ -1,0 +1,162 @@
+{
+  "conditions": [
+    {
+      "code": "ida",
+      "name": "Iron deficiency anemia",
+      "edges": {
+        "hb.low": 3,
+        "mcv.low": 3,
+        "ferritin.low": 4,
+        "tsat.low": 2
+      },
+      "first_steps": [
+        "Iron studies (ferritin, TSAT)",
+        "Assess menstrual/GI blood loss",
+        "Trial oral iron if appropriate"
+      ],
+      "citations": [
+        "kb:ida:v1"
+      ]
+    },
+    {
+      "code": "thal_trait",
+      "name": "Thalassemia trait",
+      "edges": {
+        "hb.low": 1,
+        "mcv.low": 3
+      },
+      "first_steps": [
+        "Hemoglobin electrophoresis",
+        "Family history"
+      ],
+      "citations": [
+        "kb:thal:v1"
+      ]
+    },
+    {
+      "code": "anemia_of_chronic_disease",
+      "name": "Anemia of chronic disease",
+      "edges": {
+        "hb.low": 2,
+        "crp.high": 1,
+        "ferritin.normal_or_high": 2
+      },
+      "first_steps": [
+        "Inflammation workup",
+        "Chronic disease assessment"
+      ],
+      "citations": [
+        "kb:acd:v1"
+      ]
+    },
+    {
+      "code": "hypothyroidism",
+      "name": "Hypothyroidism",
+      "edges": {
+        "tsh.high": 3,
+        "ft4.low": 2,
+        "hba1c.high": 1
+      },
+      "first_steps": [
+        "Repeat TSH/FT4",
+        "Start levothyroxine if confirmed"
+      ],
+      "citations": [
+        "kb:hypothyroid:v1"
+      ]
+    },
+    {
+      "code": "hyperthyroidism",
+      "name": "Hyperthyroidism",
+      "edges": {
+        "tsh.low": 3,
+        "ft4.high": 3
+      },
+      "first_steps": [
+        "Thyroid uptake/scan as indicated",
+        "Beta-blocker for symptoms"
+      ],
+      "citations": [
+        "kb:hyperthyroid:v1"
+      ]
+    },
+    {
+      "code": "ckd",
+      "name": "Chronic kidney disease",
+      "edges": {
+        "egfr.low": 3,
+        "creat.high": 2
+      },
+      "first_steps": [
+        "Repeat labs in 3 months",
+        "Urine ACR",
+        "Medication review (ACEi/ARB)"
+      ],
+      "citations": [
+        "kb:ckd:v1"
+      ]
+    },
+    {
+      "code": "aki",
+      "name": "Acute kidney injury",
+      "edges": {
+        "creat.high": 3,
+        "egfr.low": 2
+      },
+      "first_steps": [
+        "Volume status, meds, obstruction US",
+        "Daily labs"
+      ],
+      "citations": [
+        "kb:aki:v1"
+      ]
+    },
+    {
+      "code": "hepatocellular_injury",
+      "name": "Hepatocellular liver injury",
+      "edges": {
+        "alt.fold_gt_3x": 3,
+        "ast.fold_gt_3x": 2,
+        "tbili.high": 1
+      },
+      "first_steps": [
+        "Viral hepatitis panel",
+        "Medication/toxin review",
+        "Abdominal US"
+      ],
+      "citations": [
+        "kb:liver:hepatocellular:v1"
+      ]
+    },
+    {
+      "code": "cholestatic_injury",
+      "name": "Cholestatic liver injury",
+      "edges": {
+        "alp.fold_gt_2x": 3,
+        "tbili.high": 2
+      },
+      "first_steps": [
+        "Abdominal US for ducts",
+        "Autoimmune markers if indicated"
+      ],
+      "citations": [
+        "kb:liver:cholestatic:v1"
+      ]
+    },
+    {
+      "code": "diabetes_poor_control",
+      "name": "Diabetes — poor control",
+      "edges": {
+        "hba1c.high": 3
+      },
+      "first_steps": [
+        "Medication intensification",
+        "Diet/DM education",
+        "SMBG/CGM"
+      ],
+      "citations": [
+        "kb:dm:control:v1"
+      ]
+    }
+  ]
+}
