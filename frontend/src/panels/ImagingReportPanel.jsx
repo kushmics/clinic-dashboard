@@ -22,7 +22,12 @@ export default function ImagingReportPanel({
           <p className="eyebrow">Track B draft</p>
           <h3>Chest X-ray preliminary review</h3>
         </div>
-        <span className={`urgency-badge ${draft?.urgency ?? "routine"}`}>{draft?.urgency ?? "routine"}</span>
+        <span
+          className={`urgency-badge triage-${draft?.triage?.color ?? "blue"}`}
+          title={draft?.triage ? `Level ${draft.triage.level} — wait ≤${draft.triage.target_minutes}min — composite ${draft.triage.composite}` : ""}
+        >
+          {draft?.triage?.label ?? "Non-Urgent"}
+        </span>
       </div>
 
       {draft?.generation_note && <p className="generation-note">{draft.generation_note}</p>}

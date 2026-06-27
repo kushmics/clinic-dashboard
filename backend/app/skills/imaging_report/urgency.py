@@ -131,7 +131,7 @@ _NORMAL_PATTERNS: list[str] = [
     r"no\s+(evidence|sign)\s+of",
     r"normal\s+(morpholog|appearance|anatomy|size|study|cardiac|brain|lung|bowel|liver|kidney|spleen)",
     r"no\s+(acute\s+)?(intracranial|pulmonary|abdominal)\s+patholog",
-    r"clear\s+lung",
+    r"clear\s+(lung|cardiac|chest|abdomen|brain|bowel)",
     r"well[\s-]?positioned",
     r"intact\b",
     r"no\s+fractur",
