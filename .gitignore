@@ -3,8 +3,6 @@
 .env.local
 
 # --- PHI / uploads — NEVER commit patient data ---
-backend/data/
-data/
 *.dcm
 uploads/
 
