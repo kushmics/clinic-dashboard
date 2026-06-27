@@ -73,6 +73,8 @@ export default function App() {
   const [sentReferrals, setSentReferrals] = useState([]);
   const [generatedReferralDraft, setGeneratedReferralDraft] = useState(null);
   const [isGeneratingReferral, setIsGeneratingReferral] = useState(false);
+  const [generatedDifferentialDraft, setGeneratedDifferentialDraft] = useState(null);
+  const [isGeneratingDifferential, setIsGeneratingDifferential] = useState(false);
   const [generatedImagingDraft, setGeneratedImagingDraft] = useState(null);
   const [xrayPreviewUrl, setXrayPreviewUrl] = useState("");
   const [xrayFile, setXrayFile] = useState(null);
@@ -85,6 +87,7 @@ export default function App() {
 
   const activeLabDraft = generatedLabDraft ?? caseData.lab_triage;
   const activeImagingDraft = generatedImagingDraft ?? caseData.imaging_report;
+  const activeDifferentialDraft = generatedDifferentialDraft ?? caseData.differential_dx;
   const urgency = activeLabDraft.urgency ?? activeImagingDraft.urgency ?? "routine";
   const patientLine = `${caseData.patient.name} / ${caseData.patient.age}${caseData.patient.sex} / ${caseData.patient.id}`;
 
@@ -98,7 +101,7 @@ export default function App() {
           (item) => `${item.name ?? item.analyte}: ${item.value} ${item.unit ?? ""} (${item.flag})`
         ),
         ...(activeImagingDraft.findings ?? []),
-        ...(caseData.differential_dx.red_flags ?? []),
+        ...(activeDifferentialDraft.red_flags ?? []),
       ],
       letter_markdown: `Dear Internal Medicine Team,
 
@@ -116,8 +119,11 @@ ${(activeLabDraft.abnormals ?? [])
 - ${activeImagingDraft.impression}
 
 Provisional considerations:
-${caseData.differential_dx.differentials
-  .map((item) => `- ${item.condition}: ${item.rationale}`)
+${activeDifferentialDraft.differentials
+  .map((item) => {
+    const rationale = item.rationale ?? item.reason ?? item.supporting?.join("; ");
+    return rationale ? `- ${item.condition}: ${rationale}` : `- ${item.condition}`;
+  })
   .join("\n")}
 
 Please assess and advise on further management.
@@ -125,7 +131,7 @@ Please assess and advise on further management.
 Regards,
 Clinician reviewer`,
     }),
-    [caseData, activeImagingDraft, activeLabDraft]
+    [caseData, activeDifferentialDraft, activeImagingDraft, activeLabDraft]
   );
 
   const activeReferralDraft = generatedReferralDraft ?? referralDraft;
@@ -223,15 +229,56 @@ Clinician reviewer`,
       const res = await authFetch("/api/ingestion/upload", { method: "POST", body });
       if (!res.ok) throw new Error(`Upload failed (${res.status})`);
       const result = await res.json();
+      let nextLabDraft = null;
       if (result.result?.draft) {
-        setGeneratedLabDraft(result.result.draft);
+        nextLabDraft = result.result.draft;
+        setGeneratedLabDraft(nextLabDraft);
+        setGeneratedReferralDraft(null);
         setActivePanel("lab");
         setActiveStage("drafts");
       }
       setStatus(`${result.filename} uploaded`);
       addAudit("Staff", "Uploaded source file", result.filename);
+      if (nextLabDraft) {
+        await generateDifferentialDraft(nextLabDraft, activeImagingDraft, "Uploaded lab routed into differential diagnosis");
+      }
     } catch (err) {
       setStatus("Error: " + err.message);
+    }
+  }
+
+  async function generateDifferentialDraft(
+    labDraft = activeLabDraft,
+    imagingDraft = activeImagingDraft,
+    auditDetail = "Lab triage and imaging drafts routed into differential diagnosis"
+  ) {
+    setIsGeneratingDifferential(true);
+    try {
+      const res = await authFetch("/api/engine/run/differential_dx", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: caseData.patient.summary,
+          context: {
+            patient: caseData.patient,
+            sex: caseData.patient.sex === "F" ? "female" : caseData.patient.sex === "M" ? "male" : caseData.patient.sex,
+            age: caseData.patient.age,
+            lab_triage: labDraft,
+            imaging_report: imagingDraft,
+          },
+        }),
+      });
+      if (!res.ok) throw new Error(`Differential generation failed (${res.status})`);
+      const result = await res.json();
+      setGeneratedDifferentialDraft(result.draft);
+      setGeneratedReferralDraft(null);
+      addAudit("AI", "Generated differential draft", auditDetail);
+      return result.draft;
+    } catch (err) {
+      addAudit("System", "Differential generation failed", err.message);
+      return null;
+    } finally {
+      setIsGeneratingDifferential(false);
     }
   }
 
@@ -270,7 +317,7 @@ Clinician reviewer`,
             patient: caseData.patient,
             lab_triage: activeLabDraft,
             imaging_report: activeImagingDraft,
-            differential_dx: caseData.differential_dx,
+            differential_dx: activeDifferentialDraft,
             recipient_specialty: "Internal Medicine",
             reason_for_referral: "Symptomatic anemia and cardiometabolic risk review",
           },
@@ -313,10 +360,12 @@ Clinician reviewer`,
       const res = await authFetch("/api/imaging/analyze-upload", { method: "POST", body });
       if (!res.ok) throw new Error(`Imaging analysis failed (${res.status})`);
       const result = await res.json();
-      setGeneratedImagingDraft(result.draft);
+      const nextImagingDraft = result.draft;
+      setGeneratedImagingDraft(nextImagingDraft);
       setGeneratedReferralDraft(null);
       setActivePanel("imaging");
       setActiveStage("review");
+      await generateDifferentialDraft(activeLabDraft, nextImagingDraft, "Imaging draft added to differential context");
       if (result.draft?.generation_note) {
         addAudit("System", "Imaging generation used fallback", result.draft.generation_note);
       } else {
@@ -361,7 +410,13 @@ Clinician reviewer`,
         onAnalyze={handleAnalyzeXray}
       />
     ),
-    dx: <DifferentialDxPanel draft={caseData.differential_dx} />,
+    dx: (
+      <DifferentialDxPanel
+        draft={activeDifferentialDraft}
+        isGenerating={isGeneratingDifferential}
+        onGenerate={() => generateDifferentialDraft()}
+      />
+    ),
     referral: (
       <ReferralLetterPanel
         draft={activeReferralDraft}

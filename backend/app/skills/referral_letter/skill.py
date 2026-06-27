@@ -66,7 +66,7 @@ class ReferralLetterSkill(Skill):
 
         relevant_findings = []
         for item in lab.get("abnormals", []):
-            name = item.get("name", "Finding")
+            name = item.get("analyte") or item.get("name") or "Finding"
             value = item.get("value", "")
             unit = item.get("unit", "")
             flag = item.get("flag", "abnormal")
@@ -121,7 +121,7 @@ def _format_differentials(draft: dict) -> str:
             lines.append(f"- {item}")
         else:
             label = item.get("condition") or item.get("name") or "Consideration"
-            rationale = item.get("rationale") or item.get("reason") or ""
+            rationale = item.get("rationale") or item.get("reason") or "; ".join(item.get("supporting", [])[:3])
             lines.append(f"- {label}: {rationale}" if rationale else f"- {label}")
     return "\n".join(lines)
 

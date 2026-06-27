@@ -1,5 +1,5 @@
 // Track C. Renders differential_dx draft: ranked differentials + Exa-cited next steps.
-export default function DifferentialDxPanel({ draft }) {
+export default function DifferentialDxPanel({ draft, isGenerating = false, onGenerate }) {
   const differentials = draft?.differentials ?? [];
   const redFlags = draft?.red_flags ?? [];
 
@@ -10,7 +10,12 @@ export default function DifferentialDxPanel({ draft }) {
           <p className="eyebrow">Track C draft</p>
           <h3>Differential diagnosis</h3>
         </div>
-        <span className="sign-state draft">Review</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button type="button" className="generate-action" onClick={onGenerate} disabled={isGenerating}>
+            {isGenerating ? "Generating..." : "Regenerate"}
+          </button>
+          <span className="sign-state draft">Review</span>
+        </div>
       </div>
 
       {redFlags.length > 0 && (
