@@ -1,3 +1,5 @@
+## backend/app/services/image_processing.py
+
 """Local preprocessing for imaging uploads.
 
 This module converts common hackathon/demo medical image formats into a
@@ -70,7 +72,7 @@ except ImportError:
     _PYTESSERACT = False
 
 
-MAX_MODEL_IMAGE_SIDE = 1568
+MAX_CLAUDE_IMAGE_SIDE = 1568
 
 CT_WINDOWS = {
     "lung": (-600, 1500),
@@ -491,7 +493,7 @@ def _rss_from_kspace(kspace: np.ndarray) -> np.ndarray:
     return magnitude
 
 
-def _resize_for_model(img: Image.Image, max_side: int = MAX_MODEL_IMAGE_SIDE) -> Image.Image:
+def _resize_for_model(img: Image.Image, max_side: int = MAX_CLAUDE_IMAGE_SIDE) -> Image.Image:
     width, height = img.size
     if max(width, height) <= max_side:
         return img
@@ -544,3 +546,4 @@ def _json_safe_attr(value: Any) -> Any:
     if isinstance(value, bytes):
         return value.decode(errors="ignore")
     return value
+

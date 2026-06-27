@@ -2,7 +2,7 @@
 
 Pipeline:
     1. image_processing.prepare_image()  — convert upload to normalised PNG
-    2. OpenAI vision model              — draft findings + bbox ROIs
+    2. OpenAI vision model (gpt-4o-mini) — draft findings + bbox ROIs
     3. image_processing.annotate_image() — draw ROIs onto PNG for frontend
     4. Return SkillResult with draft + annotated_image_path injected into draft
 
@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import base64
 import json
+import tempfile
 from pathlib import Path
 
 from openai import OpenAI
@@ -28,8 +29,13 @@ class ImagingReportSkill(Skill):
     name = "imaging_report"
     dir = Path(__file__).parent
 
-    def __init__(self) -> None:
+    def __init__(self, model_override: str | None = None) -> None:
         self._client: OpenAI | None = None
+        self.model_override = model_override
+
+    @property
+    def model(self) -> str:
+        return self.model_override or settings.openai_model
 
     @property
     def client(self) -> OpenAI:
@@ -61,16 +67,19 @@ class ImagingReportSkill(Skill):
 
         if data.image_path:
             modality_hint = data.context.get("modality_hint") if data.context else None
+            out_dir = Path(data.context.get("output_dir", "")) if data.context and data.context.get("output_dir") else None
+            if out_dir is None:
+                out_dir = Path(tempfile.mkdtemp(prefix="imaging_"))
             prep = prepare_image(
                 file_path=data.image_path,
                 modality_hint=modality_hint,
-                output_dir=Path(data.image_path).parent,
+                output_dir=out_dir,
             )
             prepared_path = prep["png_path"]
             modality_label = _friendly_modality(prep["modality"])
             prep_extra = prep.get("extra", {})
 
-        # ── Step 2: build OpenAI message ────────────────────────────────
+        # ── Step 2: build message ───────────────────────────────────────
         user_content: list[dict] = []
 
         if prepared_path:
@@ -84,7 +93,6 @@ class ImagingReportSkill(Skill):
                 },
             })
 
-        # Compose text context block
         user_parts: list[str] = []
 
         if modality_label != "Unknown":
@@ -105,17 +113,18 @@ class ImagingReportSkill(Skill):
             user_parts.append(f"\nExtracted report text:\n{data.text.strip()}")
 
         if data.context:
-            ctx = {k: v for k, v in data.context.items() if k != "modality_hint"}
+            ctx = {k: v for k, v in data.context.items()
+                   if k not in ("modality_hint", "output_dir")}
             if ctx:
                 user_parts.append(f"\nPatient context:\n{json.dumps(ctx, indent=2)}")
 
         user_text = "\n".join(user_parts) if user_parts else "No additional context."
         user_content.append({"type": "text", "text": user_text})
 
-        # ── Step 3: call OpenAI vision model ────────────────────────────
+        # ── Step 3: call vision model ───────────────────────────────────
         try:
             response = self.client.chat.completions.create(
-                model=settings.openai_model,
+                model=self.model,
                 max_tokens=1024,
                 temperature=0.1,
                 response_format={"type": "json_object"},
@@ -129,7 +138,6 @@ class ImagingReportSkill(Skill):
 
         raw = (response.choices[0].message.content or "").strip()
 
-        # Strip markdown fences if GPT-4o wraps output in ```json ... ```
         if raw.startswith("```"):
             raw = raw.split("```", 2)[1]
             if raw.startswith("json"):

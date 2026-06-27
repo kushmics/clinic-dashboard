@@ -9,9 +9,15 @@
         "type": "object",
         "properties": {
           "label": { "type": "string" },
-          "bbox": { "type": "array", "items": { "type": "number" } }
+          "bbox": {
+            "type": "array",
+            "items": { "type": "number", "minimum": 0, "maximum": 1 },
+            "minItems": 4,
+            "maxItems": 4,
+            "description": "[x_min, y_min, x_max, y_max] normalized to 0.0-1.0"
+          }
         },
-        "required": ["label"]
+        "required": ["label", "bbox"]
       }
     },
     "impression": { "type": "string" },
