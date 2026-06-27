@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     # API-first image/text reasoning via OpenAI vision.
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
+    openai_vision_model: str = "gpt-4o-mini"  # X-ray vision model (split from reasoning)
     # Semantic retrieval layer — Exa attaches verifiable guideline/literature
     # citations to differential next steps.
     exa_api_key: str | None = None

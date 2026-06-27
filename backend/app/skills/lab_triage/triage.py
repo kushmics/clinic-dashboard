@@ -38,8 +38,11 @@ def triage(extraction: Extraction, context: dict | None = None) -> dict:
             unassessed.append(record)
 
     abnormals.sort(key=_sort_key)
-    urgency = ("urgent" if any(a["flag"] == "critical" for a in abnormals)
-               else "soon" if abnormals else "routine")
+    # Map onto the 5-level acuity scale: a critical value is immediately
+    # actionable (L1), any other out-of-range value is urgent (L3), all-clear
+    # is non-urgent (L5).
+    urgency = ("immediate" if any(a["flag"] == "critical" for a in abnormals)
+               else "urgent" if abnormals else "non-urgent")
 
     return {
         "abnormals": abnormals,

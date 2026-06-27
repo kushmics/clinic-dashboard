@@ -34,7 +34,7 @@
     },
     "limitations": { "type": "array", "items": { "type": "string" } },
     "impression": { "type": "string" },
-    "urgency": { "type": "string", "enum": ["routine", "soon", "urgent"] }
+    "urgency": { "type": "string", "enum": ["immediate", "emergency", "urgent", "semi-urgent", "non-urgent"] }
   },
   "required": ["findings", "impression", "urgency"]
 }

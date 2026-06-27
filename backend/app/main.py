@@ -6,11 +6,15 @@ Run locally with:  uvicorn app.main:app --reload
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app import db
 from app.auth import require_auth
 from app.config import settings
-from app.routers import engine, imaging, ingestion, text
+from app.routers import engine, imaging, ingestion, patients, text
 
 app = FastAPI(title=settings.app_name, version="0.1.0")
+
+# Create + seed the shared patient store on startup.
+db.init_db()
 
 # Allow the Vite dev server to call the API during the hackathon.
 app.add_middleware(
@@ -23,6 +27,7 @@ app.add_middleware(
 app.include_router(ingestion.router, dependencies=[Depends(require_auth)])
 app.include_router(engine.router, dependencies=[Depends(require_auth)])
 app.include_router(imaging.router, dependencies=[Depends(require_auth)])
+app.include_router(patients.router, dependencies=[Depends(require_auth)])
 app.include_router(text.router, dependencies=[Depends(require_auth)])
 
 

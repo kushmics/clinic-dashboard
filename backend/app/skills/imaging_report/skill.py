@@ -17,12 +17,10 @@ from pathlib import Path
 
 from openai import OpenAI
 
+from app import acuity
 from app.config import settings
 from app.skills.base import Skill, SkillInput, SkillResult
 from app.services.image_processing import prepare_image, annotate_image
-
-
-_URGENCY_RANK = {"urgent": 2, "soon": 1, "routine": 0}
 
 
 class ImagingReportSkill(Skill):
@@ -35,7 +33,7 @@ class ImagingReportSkill(Skill):
 
     @property
     def model(self) -> str:
-        return self.model_override or settings.openai_model
+        return self.model_override or settings.openai_vision_model
 
     @property
     def client(self) -> OpenAI:
@@ -158,9 +156,9 @@ class ImagingReportSkill(Skill):
         draft.setdefault("impression", "")
         draft.setdefault("urgency", "routine")
 
-        urgency = draft["urgency"].lower() if isinstance(draft.get("urgency"), str) else "routine"
-        if urgency not in _URGENCY_RANK:
-            urgency = "routine"
+        # The vision model speaks routine/soon/urgent; normalise onto the
+        # shared 5-level acuity scale.
+        urgency = acuity.from_legacy(draft.get("urgency"))
         draft["urgency"] = urgency
 
         # ── Step 5: annotate image with ROIs ────────────────────────────
@@ -212,7 +210,7 @@ def _fallback_result(
         "possible_diagnoses": [],
         "limitations": [],
         "impression": "AI analysis unavailable. Please review the image manually.",
-        "urgency": "routine",
+        "urgency": "non-urgent",
         "prepared_image_path": prepared_path,
         "annotated_image_path": None,
         error_key: error_message,

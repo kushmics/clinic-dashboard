@@ -58,7 +58,8 @@ class DifferentialDxSkill(Skill):
                 "next_steps": steps,
             })
 
-        urgency = "urgent" if red_hits else None
+        # A differential red flag is a high-risk finding -> Level 2 (emergency).
+        urgency = "emergency" if red_hits else None
         draft = {
             "differentials": differentials,
             "red_flags": [h.get("message") or h.get("name") for h in red_hits],
@@ -96,7 +97,8 @@ def observations_from_lab_triage(draft: dict[str, Any], kb: KB) -> tuple[dict[st
     raw: dict[str, dict[str, Any]] = {}
     for bucket in ("abnormals", "normals"):
         for item in draft.get(bucket, []) or []:
-            code = _lab_code(item.get("analyte", ""), kb)
+            # Lab triage emits "analyte"; seeded/demo drafts may use "name".
+            code = _lab_code(item.get("analyte") or item.get("name") or "", kb)
             if not code:
                 continue
             raw[code] = {"value": item.get("value"), "units": item.get("unit")}

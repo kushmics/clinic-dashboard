@@ -4,9 +4,11 @@
 import { useState } from "react";
 
 const URGENCY = {
-  urgent: { bg: "#fdecea", fg: "#b71c1c", label: "URGENT" },
-  soon: { bg: "#fff4e5", fg: "#b15c00", label: "REVIEW SOON" },
-  routine: { bg: "#e8f5e9", fg: "#1b5e20", label: "ROUTINE" },
+  immediate: { bg: "#fde7e7", fg: "#b3261e", label: "L1 · IMMEDIATE" },
+  emergency: { bg: "#fff0e3", fg: "#b5430b", label: "L2 · EMERGENCY" },
+  urgent: { bg: "#fff7da", fg: "#8a6d00", label: "L3 · URGENT" },
+  "semi-urgent": { bg: "#e8f5e9", fg: "#1b5e20", label: "L4 · SEMI-URGENT" },
+  "non-urgent": { bg: "#e7f0fb", fg: "#15518c", label: "L5 · NON-URGENT" },
 };
 const FLAG = {
   critical: { bg: "#b71c1c", fg: "#fff" },
@@ -28,7 +30,7 @@ function Badge({ style, children }) {
 function buildNote(draft) {
   const {
     abnormals = [], unassessed = [], context_used = {},
-    urgency = "routine", summary = "", meta = {},
+    urgency = "non-urgent", summary = "", meta = {},
   } = draft;
   const lines = ["LAB TRIAGE — DRAFT (unsigned)", `Urgency: ${urgency.toUpperCase()}`, ""];
   if (summary) lines.push(summary, "");
@@ -76,7 +78,7 @@ export default function LabTriagePanel({ draft, onSign }) {
     abnormals = [], unassessed = [], normals = [], assumptions = [],
     context_used = {}, urgency = "routine", summary = "", meta = {},
   } = draft;
-  const u = URGENCY[urgency] ?? URGENCY.routine;
+  const u = URGENCY[urgency] ?? URGENCY["non-urgent"];
 
   return (
     <section className="support-panel">

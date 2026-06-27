@@ -89,7 +89,7 @@
         "priors_available": { "type": "boolean" }
       }
     },
-    "urgency": { "type": "string", "enum": ["routine", "soon", "urgent"] },
+    "urgency": { "type": "string", "enum": ["immediate", "emergency", "urgent", "semi-urgent", "non-urgent"] },
     "summary": { "type": "string", "description": "Facts-only roll-up: counts by tier + most out-of-range values with cited thresholds." }
   },
   "required": ["abnormals", "unassessed", "normals", "assumptions", "context_used", "urgency", "summary"]

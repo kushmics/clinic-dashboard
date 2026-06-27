@@ -1,4 +1,5 @@
 import { useState } from "react";
+import AcuityBadge from "./AcuityBadge.jsx";
 
 // Sign-off companion. Keeps the case evidence the clinician is attesting to —
 // the chest X-ray, abnormal labs, red flags, top differentials — beside the
@@ -40,15 +41,17 @@ export default function EvidenceRail({ xrayPreviewUrl, imagingDraft, labDraft, d
 
       {abnormals.length > 0 && (
         <section className="evidence-block">
-          <h5>Abnormal labs</h5>
+          <div className="evidence-block-head">
+            <h5>Abnormal labs</h5>
+            {labDraft?.urgency && <AcuityBadge urgency={labDraft.urgency} />}
+          </div>
           <ul className="evidence-labs">
             {abnormals.map((item, i) => {
-              const name = item.name ?? item.analyte ?? "Finding";
+              const name = item.analyte ?? item.name ?? "Finding";
               const flag = item.flag ?? "abnormal";
-              const itemUrgency = item.urgency ?? labDraft?.urgency ?? "soon";
               return (
                 <li key={`${name}-${i}`}>
-                  <span className={`evidence-dot ${itemUrgency}`} aria-hidden="true" />
+                  <span className={`evidence-dot ${flag}`} aria-hidden="true" />
                   <span className="evidence-lab-name">{name}</span>
                   <span className="evidence-lab-value">{item.value} {item.unit ?? ""}</span>
                   <span className={`evidence-flag ${flag}`}>{flag}</span>

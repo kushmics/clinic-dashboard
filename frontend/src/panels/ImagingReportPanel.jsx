@@ -1,3 +1,5 @@
+import AcuityBadge from "../components/AcuityBadge.jsx";
+
 // Track B. Renders imaging_report draft: scan viewer + ROI overlay + impression.
 export default function ImagingReportPanel({
   draft,
@@ -22,7 +24,7 @@ export default function ImagingReportPanel({
           <p className="eyebrow">Track B draft</p>
           <h3>Chest X-ray preliminary review</h3>
         </div>
-        <span className={`urgency-badge ${draft?.urgency ?? "routine"}`}>{draft?.urgency ?? "routine"}</span>
+        {draft?.urgency && <AcuityBadge urgency={draft.urgency} />}
       </div>
 
       {draft?.generation_note && <p className="generation-note">{draft.generation_note}</p>}

@@ -1298,3 +1298,103 @@ th {
   .step-nav { flex-wrap: wrap; }
   .step-next, .step-final-hint { margin-left: 0; width: 100%; text-align: center; }
 }
+
+/* ============================================================
+   Patient store, 5-level acuity, single sign-off button
+   ============================================================ */
+
+/* --- Acuity badge (shared) --- */
+.acuity {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 4px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+  line-height: 1;
+}
+.acuity b {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  font-size: 0.64rem;
+  font-weight: 900;
+  color: #fff;
+}
+.acuity.lg { font-size: 0.84rem; padding: 5px 13px 5px 5px; }
+.acuity.lg b { min-width: 22px; height: 22px; font-size: 0.72rem; }
+
+.acuity.immediate   { background: #fde7e7; color: #b3261e; } .acuity.immediate b   { background: #d6342a; }
+.acuity.emergency   { background: #fff0e3; color: #b5430b; } .acuity.emergency b   { background: #dd6a12; }
+.acuity.urgent      { background: #fff7da; color: #8a6d00; } .acuity.urgent b      { background: #d2a200; }
+.acuity.semi-urgent { background: #e6f5ea; color: #1b6b3a; } .acuity.semi-urgent b { background: #2f9e5e; }
+.acuity.non-urgent  { background: #e7f0fb; color: #15518c; } .acuity.non-urgent b  { background: #2f7dc9; }
+
+/* --- Patient picker (dark sidebar) --- */
+.patient-picker { display: flex; flex-direction: column; gap: 8px; }
+.patient-picker-head { display: flex; align-items: center; justify-content: space-between; }
+.patient-picker-head h3 { margin: 0; font-size: 1rem; color: #eaf4fb; }
+.patient-picker-head span { color: #8aa6bd; font-size: 0.85rem; }
+.patient-picker-empty { color: #8aa6bd; font-size: 0.85rem; margin: 0; }
+.patient-picker ul {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: 8px; max-height: 34vh; overflow-y: auto; padding-right: 4px;
+}
+.patient-picker button {
+  width: 100%; text-align: left; display: grid; gap: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(173, 201, 219, 0.18);
+  border-radius: 10px; padding: 10px 12px; color: #eaf4fb;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+.patient-picker button:hover { background: rgba(255, 255, 255, 0.08); }
+.patient-picker button.active { border-color: #7bd6e8; background: rgba(123, 214, 232, 0.12); }
+.patient-row-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.patient-row-top strong { font-size: 0.95rem; }
+.patient-row-sub { display: flex; align-items: center; gap: 8px; color: #8aa6bd; font-size: 0.78rem; }
+.patient-scan-dot { color: #7bd6e8; font-size: 0.72rem; font-weight: 700; }
+
+/* --- Empty workspace --- */
+.workspace-empty {
+  display: grid; place-items: center; min-height: 60vh;
+  color: #5b6978; font-size: 1.02rem;
+}
+
+/* --- Intake summary --- */
+.intake-summary { color: #43586c; line-height: 1.5; margin: 12px 0 16px; }
+
+/* --- Stepper acuity chips (override the old 3-tier values) --- */
+.review-stepper .step-urgency.immediate   { background: #fde7e7; color: #b3261e; }
+.review-stepper .step-urgency.emergency   { background: #fff0e3; color: #b5430b; }
+.review-stepper .step-urgency.urgent      { background: #fff7da; color: #8a6d00; }
+.review-stepper .step-urgency.semi-urgent { background: #e6f5ea; color: #1b6b3a; }
+.review-stepper .step-urgency.non-urgent  { background: #e7f0fb; color: #15518c; }
+
+/* --- Evidence rail: dots by flag, block head --- */
+.evidence-block-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.evidence-block-head h5 { margin: 0; }
+.evidence-dot.critical { background: #d6342a; }
+.evidence-dot.high     { background: #d9a300; }
+.evidence-dot.low      { background: #2f7dc9; }
+.evidence-flag.critical { background: #fde7e7; color: #b3261e; }
+
+/* --- Sign-off: single morphing action button --- */
+.letter-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.word-count { color: #5b6978; font-size: 0.85rem; }
+.letter-copy {
+  min-height: 46px; padding: 0 16px; border-radius: 8px; font-weight: 700;
+  background: #ffffff; border: 1px solid #cdd8e1; color: #33475b;
+}
+.letter-action {
+  min-height: 46px; padding: 0 28px; border-radius: 8px;
+  font-weight: 800; font-size: 0.95rem; color: #ffffff; border: 1px solid transparent;
+}
+.letter-action.sign { background: #1f6f83; border-color: #1f6f83; }
+.letter-action.sign:hover:not(:disabled) { background: #1b6273; }
+.letter-action.send { background: #1f7a4d; border-color: #1f7a4d; }
+.letter-action.send:hover:not(:disabled) { background: #1a6a42; }
+.letter-action.sent { background: #dff4e8; color: #23613b; border-color: #bfe6cf; }

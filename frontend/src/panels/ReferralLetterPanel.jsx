@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 
-// Track D. Renders referral_letter draft: editable letter + sign & export.
+// Track D. Renders the referral_letter draft. The letter is drafted for the
+// clinician automatically; here they edit it and drive one morphing action
+// button: Sign letter -> Send referral -> Sent.
 export default function ReferralLetterPanel({
   draft,
   patient,
   signedLetters = [],
   sentReferrals = [],
   onAudit,
-  onGenerate,
   onSigned,
   onSent,
   isGenerating = false,
@@ -32,7 +33,6 @@ export default function ReferralLetterPanel({
 
   const wordCount = useMemo(() => letter.trim().split(/\s+/).filter(Boolean).length, [letter]);
   const canSign = reviewer.trim() && specialty.trim() && reason.trim() && letter.trim();
-  const canSend = isSigned && !isSent;
 
   function handleFieldEdit(callback) {
     return (event) => {
@@ -47,8 +47,7 @@ export default function ReferralLetterPanel({
   }
 
   function handleSign() {
-    if (!canSign) return;
-    const signedAt = new Date().toISOString();
+    if (!canSign || isSigned) return;
     setIsSigned(true);
     onSigned?.({
       patientId: patient?.id,
@@ -57,22 +56,28 @@ export default function ReferralLetterPanel({
       reason,
       letter,
       reviewer,
-      signedAt,
+      signedAt: new Date().toISOString(),
     });
   }
 
   function handleSend() {
-    if (!canSend) return;
-    const sentAt = new Date().toISOString();
+    if (!isSigned || isSent) return;
     setIsSent(true);
     onSent?.({
       patientId: patient?.id,
       patientName: patient?.name,
       specialty,
       reason,
-      sentAt,
+      sentAt: new Date().toISOString(),
     });
   }
+
+  // The single morphing action button at the bottom-right.
+  const action = isSent
+    ? { label: "Sent ✓", cls: "sent", onClick: () => {}, disabled: true }
+    : isSigned
+      ? { label: "Send referral →", cls: "send", onClick: handleSend, disabled: false }
+      : { label: "Sign letter", cls: "sign", onClick: handleSign, disabled: !canSign };
 
   async function handleCopy() {
     await navigator.clipboard.writeText(letter);
@@ -84,46 +89,25 @@ export default function ReferralLetterPanel({
     <section className="referral-panel">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Track D</p>
-          <h3>Referral letter</h3>
+          <p className="eyebrow">Referral letter</p>
+          <h3>Review &amp; sign</h3>
         </div>
         <span className={isSent ? "sign-state sent" : isSigned ? "sign-state signed" : "sign-state draft"}>
-          {isSent ? "Sent" : isSigned ? "Signed" : "Draft"}
+          {isSent ? "Sent" : isSigned ? "Signed" : "Draft ready"}
         </span>
       </div>
 
+      {isGenerating && <p className="generation-note">Drafting the letter from the reviewed case…</p>}
       {draft?.generation_note && <p className="generation-note">{draft.generation_note}</p>}
-
-      <div className="handoff-strip">
-        <div className="handoff-step done">
-          <span>Draft</span>
-        </div>
-        <div className={isSigned ? "handoff-step done" : "handoff-step"}>
-          <span>Sign</span>
-        </div>
-        <div className={isSent ? "handoff-step done" : "handoff-step"}>
-          <span>Send</span>
-        </div>
-      </div>
 
       <div className="letter-controls">
         <label>
           Specialty
-          <input
-            value={specialty}
-            onChange={handleFieldEdit(setSpecialty)}
-            onBlur={() => handleFieldAudit("Edited referral specialty")}
-            placeholder="Internal Medicine"
-          />
+          <input value={specialty} onChange={handleFieldEdit(setSpecialty)} onBlur={() => handleFieldAudit("Edited referral specialty")} placeholder="Internal Medicine" />
         </label>
         <label>
           Reason
-          <input
-            value={reason}
-            onChange={handleFieldEdit(setReason)}
-            onBlur={() => handleFieldAudit("Edited referral reason")}
-            placeholder="Reason for referral"
-          />
+          <input value={reason} onChange={handleFieldEdit(setReason)} onBlur={() => handleFieldAudit("Edited referral reason")} placeholder="Reason for referral" />
         </label>
         <label>
           Reviewer
@@ -140,16 +124,10 @@ export default function ReferralLetterPanel({
 
       <div className="mode-row">
         <div className="segmented-control" aria-label="Letter mode">
-          <button className={mode === "edit" ? "active" : ""} onClick={() => setMode("edit")} type="button">
-            Edit
-          </button>
-          <button className={mode === "preview" ? "active" : ""} onClick={() => setMode("preview")} type="button">
-            Preview
-          </button>
+          <button className={mode === "edit" ? "active" : ""} onClick={() => setMode("edit")} type="button">Edit</button>
+          <button className={mode === "preview" ? "active" : ""} onClick={() => setMode("preview")} type="button">Preview</button>
         </div>
-        <button className="generate-action" type="button" onClick={onGenerate} disabled={isGenerating}>
-          {isGenerating ? "Generating..." : "Generate with OpenAI"}
-        </button>
+        <span className="word-count">{wordCount} words</span>
       </div>
 
       <div className="letter-stage">
@@ -160,13 +138,14 @@ export default function ReferralLetterPanel({
               value={letter}
               onChange={handleFieldEdit(setLetter)}
               onBlur={() => handleFieldAudit("Edited referral letter")}
+              placeholder={isGenerating ? "Drafting…" : "The letter will appear here."}
             />
           </label>
         ) : (
           <article className="letter-preview">
             {letter.split("\n").map((line, index) => (
               <p key={`${line}-${index}`} className={line.trim() ? "" : "empty-line"}>
-                {line || "\u00a0"}
+                {line || " "}
               </p>
             ))}
           </article>
@@ -174,25 +153,17 @@ export default function ReferralLetterPanel({
       </div>
 
       <div className="letter-footer">
-        <span>{wordCount} words</span>
-        <div className="letter-actions">
-          <button type="button" onClick={handleCopy} disabled={!letter.trim()}>
-            {copyState || "Copy"}
-          </button>
-          <button type="button" className="primary-action" onClick={handleSign} disabled={!canSign}>
-            Sign
-          </button>
-          <button type="button" className="send-action" onClick={handleSend} disabled={!canSend}>
-            {isSent ? "Sent" : "Send referral"}
-          </button>
-        </div>
+        <button type="button" className="letter-copy" onClick={handleCopy} disabled={!letter.trim()}>
+          {copyState || "Copy"}
+        </button>
+        <button type="button" className={`letter-action ${action.cls}`} onClick={action.onClick} disabled={action.disabled}>
+          {action.label}
+        </button>
       </div>
 
-      <div className="signed-log">
-        <h4>Referral handoff</h4>
-        {signedLetters.length === 0 && sentReferrals.length === 0 ? (
-          <p>No signed referral yet.</p>
-        ) : (
+      {(signedLetters.length > 0 || sentReferrals.length > 0) && (
+        <div className="signed-log">
+          <h4>Referral handoff</h4>
           <ul>
             {signedLetters.map((item) => (
               <li key={item.signedAt}>
@@ -207,8 +178,8 @@ export default function ReferralLetterPanel({
               </li>
             ))}
           </ul>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }
