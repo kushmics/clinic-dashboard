@@ -156,10 +156,19 @@ class ImagingReportSkill(Skill):
         draft.setdefault("impression", "")
         draft.setdefault("urgency", "routine")
 
-        urgency = draft["urgency"].lower() if isinstance(draft.get("urgency"), str) else "routine"
-        if urgency not in _URGENCY_RANK:
-            urgency = "routine"
+        # ── Step 4b: deterministic urgency scoring ─────────────────────
+        from app.skills.imaging_report.urgency import score_urgency
+
+        urgency_result = score_urgency(
+            findings=draft["findings"],
+            impression=draft.get("impression", ""),
+            regions_of_interest=draft.get("regions_of_interest"),
+        )
+        urgency = urgency_result.level
         draft["urgency"] = urgency
+        draft["urgency_score"] = urgency_result.score
+        draft["urgency_triggers"] = urgency_result.triggers
+        draft["urgency_breakdown"] = urgency_result.finding_scores
 
         # ── Step 5: annotate image with ROIs ────────────────────────────
         annotated_path: str | None = None
