@@ -1,0 +1,358 @@
+{
+  "source": "NUH — Test Catalog (reference ranges)",
+  "source_url": "https://nuhsingapore.testcatalog.org/",
+  "retrieved": "2026-06-27",
+  "note": "Adult reference ranges, sex/age-partitioned where the catalog partitions them. Used as fallback when the report does not print its own range. low/high inclusive. A range with sex=any and no age bounds applies to all adults. Risk-stratified analytes (cholesterol, LDL, TG, CRP, HbA1c, HDL) encode the upper or lower boundary of the lowest-risk category as high or low respectively; null means that side has no published single threshold.",
+  "analytes": {
+    "haemoglobin": {
+      "loinc": "718-7",
+      "unit": "g/dL",
+      "aliases": ["hb", "hgb", "haemoglobin", "hemoglobin"],
+      "ranges": [
+        {"sex": "male", "age_min": 18, "age_max": null, "low": 13.1, "high": 16.8},
+        {"sex": "female", "age_min": 18, "age_max": null, "low": 11.5, "high": 14.9}
+      ]
+    },
+    "wbc": {
+      "loinc": "6690-2",
+      "unit": "10^9/L",
+      "aliases": ["wbc", "white blood cell", "white cell count", "wcc", "total white", "leukocytes"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 4.30, "high": 10.40}
+      ]
+    },
+    "platelets": {
+      "loinc": "777-3",
+      "unit": "10^9/L",
+      "aliases": ["plt", "platelet", "platelets", "platelet count"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 150, "high": 410}
+      ]
+    },
+    "rbc": {
+      "loinc": "789-8",
+      "unit": "10^12/L",
+      "aliases": ["rbc", "red blood cell", "red cell count", "erythrocyte count"],
+      "ranges": [
+        {"sex": "male", "age_min": 18, "age_max": null, "low": 4.50, "high": 5.75},
+        {"sex": "female", "age_min": 18, "age_max": null, "low": 4.03, "high": 5.19}
+      ]
+    },
+    "haematocrit": {
+      "loinc": "4544-3",
+      "unit": "%",
+      "aliases": ["hct", "haematocrit", "hematocrit", "packed cell volume", "pcv"],
+      "ranges": [
+        {"sex": "male", "age_min": 18, "age_max": null, "low": 40.3, "high": 50.0},
+        {"sex": "female", "age_min": 18, "age_max": null, "low": 35.8, "high": 45.2}
+      ]
+    },
+    "mcv": {
+      "loinc": "787-2",
+      "unit": "fL",
+      "aliases": ["mcv", "mean corpuscular volume", "mean cell volume"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 80.6, "high": 96.1}
+      ]
+    },
+    "mch": {
+      "loinc": "785-6",
+      "unit": "pg",
+      "aliases": ["mch", "mean corpuscular haemoglobin", "mean cell haemoglobin"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 26.1, "high": 32.1}
+      ]
+    },
+    "mchc": {
+      "loinc": "786-4",
+      "unit": "g/dL",
+      "aliases": ["mchc", "mean corpuscular haemoglobin concentration", "mean cell haemoglobin concentration"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 30.8, "high": 34.9}
+      ]
+    },
+    "neutrophils": {
+      "loinc": "751-8",
+      "unit": "10^9/L",
+      "aliases": ["neut", "neutrophil", "neutrophils", "neutrophil count", "neut#", "abs neutrophil count", "anc"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 1.90, "high": 6.53}
+      ]
+    },
+    "lymphocytes": {
+      "loinc": "731-0",
+      "unit": "10^9/L",
+      "aliases": ["lymph", "lymphocyte", "lymphocytes", "lymphocyte count", "lym#"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 1.21, "high": 3.56}
+      ]
+    },
+    "monocytes": {
+      "loinc": "742-7",
+      "unit": "10^9/L",
+      "aliases": ["mono", "monocyte", "monocytes", "monocyte count", "mono#"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 0.23, "high": 0.82}
+      ]
+    },
+    "eosinophils": {
+      "loinc": "711-2",
+      "unit": "10^9/L",
+      "aliases": ["eo", "eosinophil", "eosinophils", "eosinophil count", "eo#"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 0.05, "high": 0.50}
+      ]
+    },
+    "basophils": {
+      "loinc": "704-7",
+      "unit": "10^9/L",
+      "aliases": ["baso", "basophil", "basophils", "basophil count", "baso#"],
+      "ranges": [
+        {"sex": "male", "age_min": 18, "age_max": null, "low": 0.02, "high": 0.09},
+        {"sex": "female", "age_min": 18, "age_max": null, "low": 0.00, "high": 0.09}
+      ]
+    },
+    "sodium": {
+      "loinc": "2951-2",
+      "unit": "mmol/L",
+      "aliases": ["na", "na+", "sodium", "serum sodium"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 135, "high": 145}
+      ]
+    },
+    "potassium": {
+      "loinc": "2823-3",
+      "unit": "mmol/L",
+      "aliases": ["k", "k+", "potassium", "serum potassium"],
+      "ranges": [
+        {"sex": "any", "age_min": 15, "age_max": null, "low": 3.5, "high": 5.2}
+      ]
+    },
+    "chloride": {
+      "loinc": "2075-0",
+      "unit": "mmol/L",
+      "aliases": ["cl", "chloride", "serum chloride"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 95, "high": 110}
+      ]
+    },
+    "bicarbonate": {
+      "loinc": "2028-9",
+      "unit": "mmol/L",
+      "aliases": ["hco3", "bicarbonate", "co2", "carbon dioxide", "serum bicarbonate", "total co2"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 22, "high": 32}
+      ]
+    },
+    "urea": {
+      "loinc": "14937-7",
+      "unit": "mmol/L",
+      "aliases": ["urea", "bun", "blood urea nitrogen", "blood urea", "serum urea"],
+      "ranges": [
+        {"sex": "male", "age_min": 19, "age_max": 49, "low": 3.2, "high": 7.4},
+        {"sex": "female", "age_min": 19, "age_max": 49, "low": 2.5, "high": 6.7},
+        {"sex": "male", "age_min": 50, "age_max": null, "low": 3.0, "high": 9.2},
+        {"sex": "female", "age_min": 50, "age_max": null, "low": 3.5, "high": 7.2}
+      ]
+    },
+    "creatinine": {
+      "loinc": "14682-9",
+      "unit": "umol/L",
+      "aliases": ["cre", "creatinine", "serum creatinine", "scr"],
+      "ranges": [
+        {"sex": "male", "age_min": 19, "age_max": null, "low": 60, "high": 110},
+        {"sex": "female", "age_min": 19, "age_max": null, "low": 45, "high": 90}
+      ]
+    },
+    "glucose_fasting": {
+      "loinc": "14771-0",
+      "unit": "mmol/L",
+      "aliases": ["fasting glucose", "fpg", "fbs", "glucose fasting", "glucose serum fasting"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 4.0, "high": 6.0}
+      ]
+    },
+    "alt": {
+      "loinc": "1743-4",
+      "unit": "U/L",
+      "aliases": ["alt", "gpt", "sgpt", "alanine transaminase", "alanine aminotransferase"],
+      "ranges": [
+        {"sex": "male", "age_min": 19, "age_max": null, "low": 6, "high": 40},
+        {"sex": "female", "age_min": 19, "age_max": null, "low": 6, "high": 35}
+      ]
+    },
+    "ast": {
+      "loinc": "30239-8",
+      "unit": "U/L",
+      "aliases": ["ast", "got", "sgot", "aspartate transaminase", "aspartate aminotransferase"],
+      "ranges": [
+        {"sex": "male", "age_min": 19, "age_max": null, "low": 6, "high": 35},
+        {"sex": "female", "age_min": 19, "age_max": null, "low": 6, "high": 30}
+      ]
+    },
+    "alp": {
+      "loinc": "6768-6",
+      "unit": "U/L",
+      "aliases": ["alp", "alkaline phosphatase", "alk phos"],
+      "ranges": [
+        {"sex": "male", "age_min": 22, "age_max": null, "low": 50, "high": 116},
+        {"sex": "female", "age_min": 30, "age_max": null, "low": 46, "high": 122}
+      ]
+    },
+    "ggt": {
+      "loinc": "2324-2",
+      "unit": "U/L",
+      "aliases": ["ggt", "gamma-gt", "gamma glutamyl transferase", "gamma glutamyltransferase"],
+      "ranges": [
+        {"sex": "male", "age_min": 19, "age_max": null, "low": null, "high": 55},
+        {"sex": "female", "age_min": 19, "age_max": null, "low": null, "high": 38}
+      ]
+    },
+    "bilirubin_total": {
+      "loinc": "14631-6",
+      "unit": "umol/L",
+      "aliases": ["tbil", "total bilirubin", "bilirubin total", "bilirubin"],
+      "ranges": [
+        {"sex": "any", "age_min": 19, "age_max": null, "low": 1, "high": 26}
+      ]
+    },
+    "albumin": {
+      "loinc": "61151-7",
+      "unit": "g/L",
+      "aliases": ["alb", "albumin", "serum albumin"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": 59, "low": 35, "high": 52},
+        {"sex": "any", "age_min": 60, "age_max": 89, "low": 32, "high": 46},
+        {"sex": "any", "age_min": 90, "age_max": null, "low": 29, "high": 45}
+      ]
+    },
+    "total_protein": {
+      "loinc": "2885-2",
+      "unit": "g/L",
+      "aliases": ["tp", "total protein", "serum total protein"],
+      "ranges": [
+        {"sex": "any", "age_min": 19, "age_max": null, "low": 60, "high": 80}
+      ]
+    },
+    "tsh": {
+      "loinc": "11580-8",
+      "unit": "mIU/L",
+      "aliases": ["tsh", "thyroid stimulating hormone", "thyrotropin"],
+      "ranges": [
+        {"sex": "any", "age_min": 19, "age_max": null, "low": 0.35, "high": 4.94}
+      ]
+    },
+    "free_t4": {
+      "loinc": "83121-4",
+      "unit": "pmol/L",
+      "aliases": ["ft4", "free t4", "free thyroxine", "free t4 (ft4)"],
+      "ranges": [
+        {"sex": "any", "age_min": 19, "age_max": null, "low": 9.0, "high": 19.1}
+      ]
+    },
+    "free_t3": {
+      "loinc": "83126-3",
+      "unit": "pmol/L",
+      "aliases": ["ft3", "free t3", "free triiodothyronine", "free t3 (ft3)"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 2.4, "high": 6.0}
+      ]
+    },
+    "calcium": {
+      "loinc": "2000-8",
+      "unit": "mmol/L",
+      "aliases": ["ca", "calcium", "total calcium", "serum calcium", "corrected calcium"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 2.10, "high": 2.60}
+      ]
+    },
+    "calcium_ionised": {
+      "loinc": "47596-2",
+      "unit": "mmol/L",
+      "aliases": ["ionised calcium", "ionized calcium", "ica", "ica++", "free calcium", "calcium ionised"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 1.15, "high": 1.30}
+      ]
+    },
+    "magnesium": {
+      "loinc": "2601-3",
+      "unit": "mmol/L",
+      "aliases": ["mg", "magnesium", "serum magnesium"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 0.70, "high": 1.10}
+      ]
+    },
+    "phosphate": {
+      "loinc": "14879-1",
+      "unit": "mmol/L",
+      "aliases": ["po4", "phosphate", "phosphorus", "inorganic phosphate", "serum phosphate"],
+      "ranges": [
+        {"sex": "any", "age_min": 20, "age_max": null, "low": 0.75, "high": 1.50}
+      ]
+    },
+    "aptt": {
+      "loinc": "14979-9",
+      "unit": "s",
+      "aliases": ["aptt", "ptt", "activated partial thromboplastin time"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 25.3, "high": 32.0}
+      ]
+    },
+    "pt": {
+      "loinc": "5902-2",
+      "unit": "s",
+      "aliases": ["pt", "prothrombin time", "protime"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 9.4, "high": 11.2}
+      ]
+    },
+    "fibrinogen": {
+      "loinc": "3255-7",
+      "unit": "g/L",
+      "aliases": ["fibrinogen", "fib"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 2.18, "high": 4.60}
+      ]
+    },
+    "hba1c": {
+      "loinc": "17856-6",
+      "unit": "%",
+      "aliases": ["hba1c", "hb a1c", "glycated haemoglobin", "glycated hemoglobin", "ghb", "a1c"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": null, "high": 6.0}
+      ]
+    },
+    "crp_hs": {
+      "loinc": "30522-7",
+      "unit": "mg/L",
+      "aliases": ["hscrp", "hs-crp", "high sensitivity crp", "crp cardiac", "ultra-sensitive crp"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": null, "high": 1.0}
+      ]
+    },
+    "total_cholesterol": {
+      "loinc": "14647-2",
+      "unit": "mmol/L",
+      "aliases": ["chol", "total cholesterol", "cholesterol"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": null, "high": 5.2}
+      ]
+    },
+    "hdl_cholesterol": {
+      "loinc": "14646-4",
+      "unit": "mmol/L",
+      "aliases": ["hdl", "hdl cholesterol", "hdl-c", "high density lipoprotein"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": 1.0, "high": null}
+      ]
+    },
+    "triglycerides": {
+      "loinc": "14927-8",
+      "unit": "mmol/L",
+      "aliases": ["tg", "trig", "triglycerides", "triglyceride"],
+      "ranges": [
+        {"sex": "any", "age_min": 18, "age_max": null, "low": null, "high": 1.7}
+      ]
+    }
+  }
+}
