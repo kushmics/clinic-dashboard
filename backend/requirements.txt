@@ -12,8 +12,9 @@ pydantic-settings>=2.3
 python-dotenv>=1.0
 httpx>=0.27
 
-# --- AI (API-first option; harmless to keep even if unused) ---
-anthropic>=0.34               # Claude vision + text for drafting/flagging
+# --- AI model layer (sponsor: OpenAI vision/text for extraction only) ---
+openai>=1.40                  # GPT vision/text — extraction stage (not severity)
+anthropic>=0.34               # alternative provider; harmless to keep if unused
 
 # --- Image processing (scans, photos of reports) ---
 Pillow>=10.3                  # general image I/O

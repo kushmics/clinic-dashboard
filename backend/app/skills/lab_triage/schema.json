@@ -1,21 +1,96 @@
 {
   "type": "object",
+  "description": "Lab-triage draft. Descriptive only — flags and sorts measured values against CITED thresholds. No interpretation (that is differential_dx). Nothing auto-signed.",
   "properties": {
     "abnormals": {
       "type": "array",
+      "description": "Flagged values, sorted never-miss: critical first, then by magnitude of deviation.",
       "items": {
         "type": "object",
         "properties": {
           "analyte": { "type": "string" },
-          "value": { "type": "string" },
-          "reference_range": { "type": "string" },
-          "flag": { "type": "string", "enum": ["low", "high", "critical"] }
+          "loinc": { "type": ["string", "null"] },
+          "value": { "type": ["number", "string"] },
+          "unit": { "type": ["string", "null"] },
+          "flag": { "type": "string", "enum": ["critical", "high", "low"] },
+          "direction": { "type": "string", "enum": ["low", "high"] },
+          "reference_range": { "type": ["string", "null"] },
+          "threshold_source": {
+            "type": "object",
+            "description": "Which cited table fired, for the audit trail.",
+            "properties": {
+              "table": { "type": "string", "enum": ["SGH", "NUH", "report"] },
+              "rule": { "type": "string", "enum": ["low", "high"] },
+              "threshold": { "type": ["number", "null"] },
+              "url": { "type": ["string", "null"] }
+            },
+            "required": ["table", "rule"]
+          },
+          "provisional": { "type": "boolean" },
+          "delta": {
+            "type": ["object", "null"],
+            "description": "Trend vs prior result when one was supplied via context.",
+            "properties": {
+              "prior": { "type": "number" },
+              "change": { "type": "number" },
+              "pct": { "type": ["number", "null"] },
+              "note": { "type": "string" }
+            }
+          },
+          "note": { "type": "string", "description": "Facts-only restatement of the flag. No interpretation." }
         },
-        "required": ["analyte", "value", "flag"]
+        "required": ["analyte", "value", "flag", "direction", "threshold_source", "provisional", "note"]
+      }
+    },
+    "unassessed": {
+      "type": "array",
+      "description": "Extracted but NOT assessed (no range on file, unit mismatch, non-numeric). Never dropped, never guessed normal/abnormal.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "analyte": { "type": "string" },
+          "value": { "type": ["number", "string"] },
+          "unit": { "type": ["string", "null"] },
+          "reason": { "type": "string" },
+          "source_text": { "type": ["string", "null"] }
+        },
+        "required": ["analyte", "value", "reason"]
+      }
+    },
+    "normals": {
+      "type": "array",
+      "description": "Values within their reference range. Kept for completeness (lose no information).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "analyte": { "type": "string" },
+          "loinc": { "type": ["string", "null"] },
+          "value": { "type": ["number", "string"] },
+          "unit": { "type": ["string", "null"] },
+          "reference_range": { "type": ["string", "null"] },
+          "range_source": { "type": "string", "enum": ["report", "NUH"] }
+        },
+        "required": ["analyte", "value"]
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "description": "Provisional assumptions made (decision 5) — e.g. sex/age not supplied.",
+      "items": { "type": "string" }
+    },
+    "context_used": {
+      "type": "object",
+      "description": "Patient context the triage ran against, with provenance.",
+      "properties": {
+        "sex": { "type": ["string", "null"], "enum": ["male", "female", null] },
+        "sex_source": { "type": ["string", "null"], "enum": ["report", "provided", "assumed", null] },
+        "age": { "type": ["number", "null"] },
+        "age_source": { "type": ["string", "null"], "enum": ["report", "provided", "assumed", null] },
+        "priors_available": { "type": "boolean" }
       }
     },
     "urgency": { "type": "string", "enum": ["routine", "soon", "urgent"] },
-    "summary": { "type": "string" }
+    "summary": { "type": "string", "description": "Facts-only roll-up: counts by tier + most out-of-range values with cited thresholds." }
   },
-  "required": ["abnormals", "urgency", "summary"]
+  "required": ["abnormals", "unassessed", "normals", "assumptions", "context_used", "urgency", "summary"]
 }

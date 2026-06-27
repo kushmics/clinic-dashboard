@@ -1,0 +1,30 @@
+{
+  "source": "SGH — Critical Test Results and Laboratory Values",
+  "source_url": "https://www.sgh.com.sg/our-specialties/pathology/pathology-lab-services/critical-test-results-and-laboratory-values",
+  "retrieved": "2026-06-27",
+  "note": "Adult critical thresholds. A value at/beyond these triggers the top of the never-miss sort. Mostly single thresholds, not age/sex-partitioned (neonatal exceptions excluded here). low/high are inclusive bounds; null means that side has no critical limit.",
+  "analytes": {
+    "potassium": {"low": 2.5, "high": 5.7, "unit": "mmol/L", "aliases": ["k", "k+", "potassium", "serum potassium"]},
+    "sodium": {"low": 120, "high": 160, "unit": "mmol/L", "aliases": ["na", "na+", "sodium", "serum sodium"]},
+    "calcium": {"low": 1.75, "high": 3.25, "unit": "mmol/L", "aliases": ["ca", "calcium", "total calcium", "serum calcium", "corrected calcium"]},
+    "calcium_ionised": {"low": 0.80, "high": 1.60, "unit": "mmol/L", "aliases": ["ionised calcium", "ionized calcium", "ica", "ica++", "free calcium"]},
+    "glucose": {"low": 2.5, "high": 25.0, "unit": "mmol/L", "aliases": ["glu", "glucose", "blood glucose", "serum glucose", "random glucose"]},
+    "haemoglobin": {"low": 6.0, "high": 20.0, "unit": "g/dL", "aliases": ["hb", "hgb", "haemoglobin", "hemoglobin"]},
+    "wbc": {"low": 1.0, "high": 50.0, "unit": "10^9/L", "aliases": ["wbc", "white blood cell", "white cell count", "wcc", "total white", "leukocytes"]},
+    "platelets": {"low": 20, "high": 800, "unit": "10^9/L", "aliases": ["plt", "platelet", "platelets", "platelet count"]},
+    "aptt": {"low": null, "high": 100, "unit": "s", "aliases": ["aptt", "ptt", "activated partial thromboplastin time"]},
+    "inr": {"low": null, "high": 5.0, "unit": "ratio", "aliases": ["inr", "international normalised ratio", "international normalized ratio"]},
+    "fibrinogen": {"low": 0.9, "high": 7.8, "unit": "g/L", "aliases": ["fibrinogen", "fib"]},
+    "blood_gas_ph": {"low": 7.1, "high": 7.6, "unit": "", "aliases": ["ph", "blood ph", "arterial ph", "blood gas ph"]},
+    "digoxin": {"low": null, "high": 2.4, "unit": "ug/L", "aliases": ["digoxin"]},
+    "theophylline": {"low": null, "high": 20, "unit": "mg/L", "aliases": ["theophylline"]},
+    "blood_ketone": {"low": null, "high": 1.4, "unit": "mmol/L", "aliases": ["blood ketone", "ketone", "ketones", "bhob", "beta-hydroxybutyrate"]},
+    "lithium": {"low": null, "high": 2.0, "unit": "mmol/L", "aliases": ["lithium", "li"]},
+    "amikacin": {"low": null, "high": 35, "unit": "mg/L", "aliases": ["amikacin"]},
+    "gentamicin": {"low": null, "high": 15, "unit": "mg/L", "aliases": ["gentamicin"]},
+    "phenobarbital": {"low": null, "high": 40, "unit": "mg/L", "aliases": ["phenobarbital", "phenobarbitone"]},
+    "phenytoin": {"low": null, "high": 20, "unit": "mg/L", "aliases": ["phenytoin", "dilantin"]},
+    "valproic_acid": {"low": null, "high": 100, "unit": "mg/L", "aliases": ["valproic acid", "valproate", "vpa"]},
+    "vancomycin": {"low": null, "high": 80, "unit": "mg/L", "aliases": ["vancomycin"]}
+  }
+}
