@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: clinic-dashboard-deployment-testing
+    name: clinic-dashboard
     runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile
@@ -13,7 +13,11 @@ services:
         sync: false
       - key: OPENAI_API_KEY
         sync: false
+      # Reasoning/text model: triage, differentials, referral letters.
       - key: OPENAI_MODEL
+        value: gpt-5.4
+      # Chest X-ray vision reads run on their own model.
+      - key: OPENAI_VISION_MODEL
         value: gpt-4o-mini
       - key: EXA_API_KEY
         sync: false

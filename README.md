@@ -23,25 +23,29 @@ No API keys needed: lab triage, differentials, the imaging reads on the seeded
 patients, and referral letters all work out of the box. Add an `OPENAI_API_KEY`
 to `.env` only if you want live X-ray reads or the patient-ID scanner.
 
-## Decision pending: AI approach
+## AI model layer
 
-The interpretation layer (image, text, medical-term understanding) is stubbed.
-Choose one before wiring it up — it determines which requirements you install:
+The interpretation layer is **API-first on OpenAI**:
 
-| Approach | Install | Notes |
-|----------|---------|-------|
-| **API-first (Claude)** | `requirements.txt` only | Lightest, fastest. Claude vision + text for reports, flags, differentials, letters. |
-| **Local ML** | `+ requirements-ml.txt` | Multi-GB (torch, transformers, scispaCy). Runs offline, no PHI leaves the box. |
-| **Hybrid** | base `+` parts of ML | Claude for reasoning, local libs for DICOM/OCR/NER. |
+| Stage | Model | Env var |
+|-------|-------|---------|
+| Reasoning — triage, differentials, referral letters | `gpt-5.4` | `OPENAI_MODEL` |
+| Chest X-ray vision reads + patient-ID scanner | `gpt-4o-mini` | `OPENAI_VISION_MODEL` |
+| Differential evidence / guideline lookup | Exa semantic search | `EXA_API_KEY` |
 
-Service stubs marked `AI APPROACH PENDING`:
-`backend/app/services/{image_processing,text_processing,medical_nlp}.py`
+The lab-triage and differential engines are **deterministic** (cited reference
+tables + a curated knowledge base), so the seeded demo runs with **no API keys**.
+Set `OPENAI_API_KEY` to unlock live X-ray reads and the ID scanner.
+
+A local-ML path (`requirements-ml.txt`: torch, transformers, scispaCy/UMLS) stays
+available for offline, no-PHI-leaves-the-box deployments — install it only if you
+swap onto that path.
 
 ## Capabilities → libraries
 
 - **Image processing** — Pillow, OpenCV, pydicom (DICOM), PyMuPDF/pdf2image, pytesseract (OCR)
-- **Text processing** — pypdf, python-docx, pandas, spaCy
-- **Medical terms** — rapidfuzz (now); scispaCy + UMLS linker or Claude (when chosen)
+- **Text processing** — pypdf, python-docx, pandas
+- **Medical terms** — rapidfuzz; scispaCy + UMLS linker on the local-ML path
 
 ## Layout
 
@@ -57,7 +61,7 @@ frontend/   Vite + React dashboard
 cd backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp ../.env.example ../.env   # fill in if using the Claude API
+cp ../.env.example ../.env   # add OPENAI_API_KEY for live vision (optional)
 uvicorn app.main:app --reload   # http://localhost:8000  (/docs for Swagger)
 ```
 System packages for full image/text support: `tesseract` (OCR) and `poppler`
@@ -75,6 +79,18 @@ npm run dev   # http://localhost:5173  (proxies /api -> :8000)
 ```
 Sign in with the same access token configured for the backend.
 
+
+## Deploy
+
+The repo ships a production image and a Render blueprint. The multi-stage
+`Dockerfile` builds the Vite frontend, installs `backend/requirements-deploy.txt`,
+and serves the built UI **and** the API from one FastAPI process on `$PORT`.
+
+- **Render** — point a Blueprint at `render.yaml` (health check `/health`). Set
+  `AUTH_TOKEN` (required); add `OPENAI_API_KEY` / `EXA_API_KEY` for live AI.
+- **Any Docker host** — `docker build -t clinic-dashboard . && docker run -p 8000:8000 -e AUTH_TOKEN=... clinic-dashboard`
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the full env-var list and verification steps.
 
 ## ⚠️ PHI / safety
 
