@@ -13,7 +13,8 @@ python-dotenv>=1.0
 httpx>=0.27
 
 # --- AI (API-first option; harmless to keep even if unused) ---
-anthropic>=0.34               # Claude vision + text for drafting/flagging
+openai>=1.40                  # OpenAI text/vision for drafting/flagging
+anthropic>=0.34               # Claude fallback path if the team chooses it
 
 # --- Image processing (scans, photos of reports) ---
 Pillow>=10.3                  # general image I/O
