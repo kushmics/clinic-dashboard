@@ -3,7 +3,7 @@
 ingest -> structure -> reason (skill) -> score -> [human sign-off] -> audit
 """
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.skills import REGISTRY
 from app.skills.base import SkillInput
@@ -16,7 +16,7 @@ class RunRequest(BaseModel):
     upstream skills' drafts (e.g. referral_letter consumes the others)."""
     text: str = ""
     image_path: str | None = None
-    context: dict = {}
+    context: dict = Field(default_factory=dict)
 
 
 @router.get("/skills")
@@ -30,7 +30,11 @@ def run_skill(skill_name: str, req: RunRequest | None = None) -> dict:
     if skill is None:
         raise HTTPException(404, f"unknown skill: {skill_name}")
     req = req or RunRequest()
-    result = skill.run(SkillInput(text=req.text, image_path=req.image_path,
-                                  context=req.context))
-    return {"skill": result.skill, "draft": result.draft,
-            "urgency": result.urgency, "signed": result.signed}
+    result = skill.run(
+        SkillInput(
+            text=req.text,
+            image_path=req.image_path,
+            context=req.context,
+        )
+    )
+    return {"skill": result.skill, "draft": result.draft, "urgency": result.urgency, "signed": result.signed}

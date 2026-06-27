@@ -1,11 +1,22 @@
 // Track C. Renders differential_dx draft: ranked differentials + Exa-cited next steps.
-export default function DifferentialDxPanel({ draft }) {
+export default function DifferentialDxPanel({ draft, isGenerating = false, onGenerate }) {
   const differentials = draft?.differentials ?? [];
   const redFlags = draft?.red_flags ?? [];
 
   return (
-    <section style={{ background: "#fff", border: "1px solid #e1e6eb", borderRadius: 12, padding: 20 }}>
-      <h3 style={{ marginTop: 0 }}>Differential diagnosis</h3>
+    <section className="support-panel">
+      <div className="panel-heading">
+        <div>
+          <p className="eyebrow">Track C draft</p>
+          <h3>Differential diagnosis</h3>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button type="button" className="generate-action" onClick={onGenerate} disabled={isGenerating}>
+            {isGenerating ? "Generating..." : "Regenerate"}
+          </button>
+          <span className="sign-state draft">Review</span>
+        </div>
+      </div>
 
       {redFlags.length > 0 && (
         <div style={{ background: "#fdecea", border: "1px solid #f5c2c7", color: "#842029",
@@ -24,6 +35,10 @@ export default function DifferentialDxPanel({ draft }) {
             <strong>{i + 1}. {dx.condition}</strong>
             <span style={{ fontSize: 12, color: "#5a6b7c", textTransform: "uppercase" }}>{dx.likelihood}</span>
           </div>
+
+          {dx.rationale && (
+            <p style={{ margin: "6px 0", color: "#33475b", fontSize: 13 }}>{dx.rationale}</p>
+          )}
 
           {dx.supporting?.length > 0 && (
             <p style={{ margin: "6px 0", color: "#33475b", fontSize: 13 }}>
