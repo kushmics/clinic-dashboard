@@ -2,6 +2,10 @@
 export default function DifferentialDxPanel({ draft, isGenerating = false, onGenerate }) {
   const differentials = draft?.differentials ?? [];
   const redFlags = draft?.red_flags ?? [];
+  const caseSummary = draft?.case_summary ?? null;
+  const labObservations = caseSummary?.lab_observations ?? [];
+  const imagingFindings = caseSummary?.imaging_findings ?? [];
+  const symptoms = caseSummary?.symptoms ?? [];
 
   return (
     <section className="support-panel">
@@ -17,6 +21,34 @@ export default function DifferentialDxPanel({ draft, isGenerating = false, onGen
           <span className="sign-state draft">Review</span>
         </div>
       </div>
+
+      {(labObservations.length > 0 || imagingFindings.length > 0 || symptoms.length > 0) && (
+        <div className="dx-evidence">
+          <p className="eyebrow">Carried forward into this differential</p>
+          <div className="dx-evidence-grid">
+            <div>
+              <h5>From lab triage</h5>
+              {labObservations.length > 0 ? (
+                <ul>{labObservations.map((o) => <li key={o}>{o}</li>)}</ul>
+              ) : (
+                <p className="muted-note">No structured lab observations.</p>
+              )}
+            </div>
+            {symptoms.length > 0 && (
+              <div>
+                <h5>Reported symptoms</h5>
+                <ul>{symptoms.map((s) => <li key={s}>{s}</li>)}</ul>
+              </div>
+            )}
+            {imagingFindings.length > 0 && (
+              <div>
+                <h5>From imaging</h5>
+                <ul>{imagingFindings.map((f) => <li key={f}>{f}</li>)}</ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {redFlags.length > 0 && (
         <div style={{ background: "#fdecea", border: "1px solid #f5c2c7", color: "#842029",

@@ -169,9 +169,13 @@ def _extract_patient_identity(path: Path, content_type: str) -> dict:
         vision_parts = _vision_parts_for_patient_document(path, content_type)
 
         client = OpenAI(api_key=settings.openai_api_key)
+        # ID/document reading is a vision task -> use the vision model
+        # (gpt-4o-mini), not the gpt-5 reasoning model. gpt-5 rejects max_tokens
+        # and temperature!=1; the vision model + max_completion_tokens is the
+        # same calling convention the imaging skill uses.
         completion = client.chat.completions.create(
-            model=settings.openai_model,
-            max_tokens=900,
+            model=settings.openai_vision_model,
+            max_completion_tokens=900,
             temperature=0,
             response_format={"type": "json_object"},
             messages=[

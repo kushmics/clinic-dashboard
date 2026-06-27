@@ -8,7 +8,6 @@ export default function ImagingReportPanel({
   isAnalyzing = false,
   onImageSelect,
 }) {
-  const possibleDiagnoses = draft?.possible_diagnoses ?? [];
   const limitations = draft?.limitations ?? [];
 
   function handleFileChange(event) {
@@ -52,28 +51,6 @@ export default function ImagingReportPanel({
           <li key={finding}>{finding}</li>
         ))}
       </ul>
-      {draft && (
-        <>
-          <h4>Possible diagnoses</h4>
-          {possibleDiagnoses.length > 0 ? (
-            <ul className="diagnosis-list">
-              {possibleDiagnoses.map((item) => (
-                <li key={`${item.condition}-${item.rationale}`}>
-                  <strong>{item.condition}</strong>
-                  {item.confidence && (
-                    <span className={`confidence-chip ${item.confidence}`}>{item.confidence} confidence</span>
-                  )}
-                  <p>{item.rationale}</p>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="muted-note">
-              No imaging-based diagnoses suggested on this preliminary read — see findings and impression above.
-            </p>
-          )}
-        </>
-      )}
       <h4>Impression</h4>
       <p>{draft?.impression || "No imaging impression yet."}</p>
       {limitations.length > 0 && (

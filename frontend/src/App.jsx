@@ -692,8 +692,9 @@ Clinician reviewer`,
 }
 
 function AuthScreen({ error, onSignIn, requireToken = true }) {
-  const [name, setName] = useState("");
-  const [token, setToken] = useState("");
+  // Pre-filled for instant demo access — anyone with the repo can sign straight in.
+  const [name, setName] = useState("Dr. Demo");
+  const [token, setToken] = useState(DEMO_ACCESS_TOKEN);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(e) {
@@ -714,8 +715,8 @@ function AuthScreen({ error, onSignIn, requireToken = true }) {
           <h1 id="auth-title">Staff access</h1>
           <p>
             {requireToken
-              ? "Enter your name and the clinic access token to open patient reports."
-              : "Enter your name to open patient reports."}
+              ? "Demo access is pre-filled — just press Sign in (or change the name). Opens 5 sample patients."
+              : "Enter your name to open patient reports. Opens 5 sample patients."}
           </p>
         </div>
 

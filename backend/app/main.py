@@ -37,6 +37,7 @@ app.include_router(text.router, dependencies=[Depends(require_auth)])
 app.include_router(ingestion.router, prefix="/api", dependencies=[Depends(require_auth)])
 app.include_router(engine.router, prefix="/api", dependencies=[Depends(require_auth)])
 app.include_router(imaging.router, prefix="/api", dependencies=[Depends(require_auth)])
+app.include_router(patients.router, prefix="/api", dependencies=[Depends(require_auth)])
 app.include_router(text.router, prefix="/api", dependencies=[Depends(require_auth)])
 
 

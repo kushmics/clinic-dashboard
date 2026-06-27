@@ -9,6 +9,20 @@ generates referral letters in one click.
 **Decision-support only.** The AI drafts; a clinician reviews and signs. Every
 step is auditable. The human is never taken out of the decision.
 
+## Try it instantly
+
+Clone, then one command — sets up both halves, seeds **5 sample patients**, and
+serves the whole app on a single URL:
+
+```bash
+./start.sh        # then open http://localhost:8000
+```
+
+On the sign-in screen the demo access is pre-filled — just press **Sign in**.
+No API keys needed: lab triage, differentials, the imaging reads on the seeded
+patients, and referral letters all work out of the box. Add an `OPENAI_API_KEY`
+to `.env` only if you want live X-ray reads or the patient-ID scanner.
+
 ## Decision pending: AI approach
 
 The interpretation layer (image, text, medical-term understanding) is stubbed.
