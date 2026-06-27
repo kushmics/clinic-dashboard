@@ -108,8 +108,10 @@ def prepare_image(
     """Convert a supported imaging file into a normalized PNG.
 
     Args:
-        file_path: Raw upload path.
-        modality_hint: Optional "xray", "ct", "mri", "dicom", or "fastmri".
+        file_path: Raw upload path (any image/medical format).
+        modality_hint: Optional label hint ("xray", "ct", "mri", etc.).
+            Controls the *reported* modality label but does NOT override
+            which loader runs — the loader is always chosen by file format.
         output_dir: Where to write the prepared PNG. Defaults to input folder.
 
     Returns:
@@ -122,20 +124,24 @@ def prepare_image(
     out_dir = Path(output_dir) if output_dir else path.parent
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    modality = _detect_modality(path, modality_hint)
-    if modality == "xray":
+    loader = _detect_loader(path)
+    if loader == "raster":
         img, extra = _load_xray(path)
-    elif modality == "dicom":
+        modality = modality_hint or "xray"
+    elif loader == "dicom":
         img, extra, modality = _load_dicom(path)
-    elif modality == "ct":
-        img, extra = _load_ct(path)
-    elif modality == "mri":
-        img, extra = _load_mri(path)
-    elif modality == "fastmri":
+    elif loader == "nifti":
+        if (modality_hint or "").lower() == "mri":
+            img, extra = _load_mri(path)
+            modality = "mri"
+        else:
+            img, extra = _load_ct(path)
+            modality = "ct"
+    elif loader == "fastmri":
         img, extra = _load_fastmri(path)
         modality = "mri"
     else:
-        raise ValueError(f"Unsupported modality: {modality}")
+        raise ValueError(f"Unsupported file format: {path.suffix}")
 
     img = _resize_for_model(img)
     out_path = out_dir / f"{_safe_output_stem(path)}_prepared.png"
@@ -239,26 +245,31 @@ def draft_preliminary_report(filename: str) -> dict[str, Any]:
     }
 
 
-def _detect_modality(path: Path, hint: str | None) -> str:
-    normalized_hint = hint.lower().strip() if hint else None
-    if normalized_hint in {"xray", "ct", "mri", "dicom", "fastmri"}:
-        return normalized_hint
+_RASTER_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".tif", ".tiff", ".bmp", ".gif"}
 
+
+def _detect_loader(path: Path) -> str:
+    """Pick the right loader based on file format, not clinical modality."""
     suffix = path.suffix.lower()
     name = path.name.lower()
 
-    if suffix in {".png", ".jpg", ".jpeg", ".webp", ".tif", ".tiff"}:
-        return "xray"
+    if suffix in _RASTER_EXTS:
+        return "raster"
     if suffix in {".dcm", ".dicom"}:
         return "dicom"
     if suffix in {".h5", ".hdf5"}:
         return "fastmri"
     if suffix == ".nii" or name.endswith(".nii.gz"):
-        if any(token in name for token in ("t1", "t2", "flair", "t1ce", "brain", "brats")):
-            return "mri"
-        return "ct"
+        return "nifti"
 
-    raise ValueError(f"Cannot detect imaging modality from extension: {suffix}")
+    # Unknown extension — try opening as a raster image before giving up.
+    try:
+        Image.open(path).verify()
+        return "raster"
+    except Exception:
+        pass
+
+    raise ValueError(f"Cannot detect imaging format from extension: {suffix}")
 
 
 def _load_xray(path: Path) -> tuple[Image.Image, dict[str, Any]]:
