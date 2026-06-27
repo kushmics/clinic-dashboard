@@ -1,0 +1,21 @@
+# ── Heavy LOCAL ML stack — install ONLY if you go the "local models" route ──
+# These are multi-GB and slow to install. Skip entirely if you use the
+# Claude API for image/text/medical reasoning. Install with:
+#   pip install -r requirements-ml.txt
+# (and pip install -r requirements.txt first for the base libs)
+
+# --- Core deep learning ---
+torch>=2.3                    # pick the right CUDA/CPU build for your machine
+transformers>=4.41           # HF models (clinical BERT, BiomedCLIP, etc.)
+accelerate>=0.30
+sentencepiece>=0.2
+safetensors>=0.4
+
+# --- Medical NLP / entity linking ---
+scispacy>=0.5.4               # biomedical spaCy pipelines + UMLS linker
+# After install, also grab a model + linker, e.g.:
+#   pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_md-0.5.4.tar.gz
+
+# --- Medical imaging models (optional) ---
+# monai>=1.3                  # medical imaging deep-learning toolkit
+# open-clip-torch>=2.24       # BiomedCLIP-style image/text embeddings

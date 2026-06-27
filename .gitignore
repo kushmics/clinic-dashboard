@@ -1,0 +1,29 @@
+# --- Secrets / config ---
+.env
+.env.local
+
+# --- PHI / uploads — NEVER commit patient data ---
+backend/data/
+data/
+*.dcm
+uploads/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Node / frontend ---
+node_modules/
+frontend/dist/
+.vite/
+
+# --- OS / editor ---
+.DS_Store
+.idea/
+.vscode/
