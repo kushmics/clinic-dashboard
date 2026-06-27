@@ -8,6 +8,23 @@ from .kb import KB, parse_labs_from_text, flag_observations, evaluate_red_flags,
 
 
 def infer_context(text: str) -> dict:
+        import re
+        t = (text or '').lower()
+        sex = None
+        if ' female ' in f' {t} ' or t.startswith('female') or ' f, ' in f' {t} ':
+            sex = 'f'
+        if ' male ' in f' {t} ' or t.startswith('male') or ' m, ' in f' {t} ':
+            sex = 'm'
+        # crude age extractor: first 1-3 digit number before 'yo' or followed by 'year'
+        m = re.search(r'((d{1,3})s*(yo|y/o|years?|yrs?))|((d{1,3})s*[,])', t)
+        age = None
+        if m:
+            digs = [g for g in m.groups() or [] if g and g.isdigit()]
+            age = float(digs[0]) if digs else None
+        ctx = {}
+        if sex: ctx['sex'] = sex
+        if age: ctx['age'] = age
+        return ctx
         t = (text or '').lower()
         sex = None
         if ' female ' in f' {t} ' or t.startswith('female') or ' f, ' in f' {t} ':
