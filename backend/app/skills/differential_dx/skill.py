@@ -60,6 +60,7 @@ class DifferentialDxSkill(Skill):
 
         urgency = "urgent" if red_hits else None
         draft = {
+            "case_summary": build_case_summary(text, data.context, obs, kb),
             "differentials": differentials,
             "red_flags": [h.get("message") or h.get("name") for h in red_hits],
             "observations": obs,
@@ -102,6 +103,106 @@ def observations_from_lab_triage(draft: dict[str, Any], kb: KB) -> tuple[dict[st
             raw[code] = {"value": item.get("value"), "units": item.get("unit")}
     ctx = draft.get("context_used") or {}
     return raw, {k: v for k, v in ctx.items() if k in {"sex", "age"} and v is not None}
+
+
+def build_case_summary(
+    text: str,
+    context: dict[str, Any],
+    observations: dict[str, dict[str, Any]],
+    kb: KB,
+) -> dict[str, Any]:
+    """Human-readable evidence summary for the differential panel.
+
+    Track C is intentionally conservative: it summarizes what was actually
+    provided in the case context and points out missing clinical history rather
+    than inventing symptoms from labs.
+    """
+    patient = context.get("patient") or {}
+    lab_triage = context.get("lab_triage") or {}
+    imaging = context.get("imaging_report") or {}
+    clinical_text = _clean_clinical_text(text or patient.get("summary") or "")
+    symptoms = extract_symptom_phrases(clinical_text)
+    lab_observations = summarize_observations(observations, kb)
+    imaging_findings = [str(item) for item in imaging.get("findings", []) or []]
+    if imaging.get("impression"):
+        imaging_findings.append(str(imaging["impression"]))
+
+    gaps: list[str] = []
+    if not symptoms:
+        gaps.append("Symptoms/history not detected in the uploaded material.")
+    if not lab_observations and not (lab_triage.get("summary") or "").strip():
+        gaps.append("No structured lab observations available for differential scoring.")
+    if not imaging_findings:
+        gaps.append("No imaging findings available for differential context.")
+
+    return {
+        "patient_context": {
+            "name": str(patient.get("name", "")),
+            "age": patient.get("age"),
+            "sex": str(patient.get("sex", "")),
+            "id": str(patient.get("id", "")),
+        },
+        "clinical_text": clinical_text,
+        "symptoms": symptoms,
+        "lab_summary": str(lab_triage.get("summary", "")),
+        "lab_observations": lab_observations,
+        "imaging_findings": imaging_findings,
+        "context_gaps": gaps,
+    }
+
+
+def _clean_clinical_text(text: str) -> str:
+    cleaned = re.sub(r"\s+", " ", (text or "")).strip()
+    if cleaned.lower() in {
+        "new patient record pending cv identification and clinical source scan.",
+        "clinical summary pending source review.",
+    }:
+        return ""
+    return cleaned[:600]
+
+
+SYMPTOM_PATTERNS = [
+    "chest pain",
+    "chest tightness",
+    "shortness of breath",
+    "dyspnea",
+    "fever",
+    "cough",
+    "fatigue",
+    "dizziness",
+    "syncope",
+    "palpitations",
+    "abdominal pain",
+    "right upper quadrant pain",
+    "nausea",
+    "vomiting",
+    "weight loss",
+    "headache",
+    "weakness",
+    "polyuria",
+    "polydipsia",
+]
+
+
+def extract_symptom_phrases(text: str) -> list[str]:
+    lowered = f" {text.lower()} "
+    found = []
+    for phrase in SYMPTOM_PATTERNS:
+        if phrase in lowered:
+            found.append(phrase)
+    return found[:8]
+
+
+def summarize_observations(observations: dict[str, dict[str, Any]], kb: KB) -> list[str]:
+    items = []
+    for code, obs in observations.items():
+        lab = kb.labs.get(code)
+        name = lab.name if lab else code
+        value = obs.get("value")
+        units = obs.get("units") or (lab.unit if lab else "")
+        flag = obs.get("flag", "observed")
+        items.append(f"{name}: {value} {units} ({flag})".strip())
+    return items
 
 
 def search_evidence_for_step(
