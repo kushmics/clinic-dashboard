@@ -125,7 +125,7 @@ class ImagingReportSkill(Skill):
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
-                max_tokens=1024,
+                max_completion_tokens=1024,
                 temperature=0.1,
                 response_format={"type": "json_object"},
                 messages=[

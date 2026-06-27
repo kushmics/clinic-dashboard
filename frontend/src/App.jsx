@@ -62,6 +62,12 @@ const reportSections = [
 ];
 
 const AUTH_TOKEN_STORAGE_KEY = "clinic-dashboard-auth-token";
+const DEMO_ACCESS_TOKEN = "clinic-demo-token";
+
+function normalizeAccessToken(token) {
+  const trimmed = token.trim();
+  return trimmed.toLowerCase() === "clinic demo token" ? DEMO_ACCESS_TOKEN : trimmed;
+}
 
 export default function App() {
   const [status, setStatus] = useState("");
@@ -193,7 +199,7 @@ Clinician reviewer`,
 
   async function handleSignIn(token) {
     setAuthError("");
-    const trimmedToken = token.trim();
+    const trimmedToken = normalizeAccessToken(token);
     if (!trimmedToken) {
       setAuthError("Enter an access token.");
       return;
@@ -572,6 +578,7 @@ function AuthScreen({ error, onSignIn }) {
               autoComplete="current-password"
               autoFocus
               type="password"
+              placeholder={DEMO_ACCESS_TOKEN}
               value={token}
               onChange={(e) => setToken(e.target.value)}
             />
