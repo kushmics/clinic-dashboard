@@ -5,6 +5,9 @@
 # --- PHI / uploads — NEVER commit patient data ---
 *.dcm
 uploads/
+# SQLite store + generated scans live here; they seed fresh on first startup.
+data/
+*.db
 
 # --- Python ---
 __pycache__/
