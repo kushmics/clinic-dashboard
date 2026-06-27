@@ -25,14 +25,23 @@ npm run dev                              # http://localhost:5173, proxies /api -
 
 No test suite or linter is configured yet.
 
+## Sponsor stack (use these where they fit)
+
+This is a hackathon project; prefer the sponsors' tools so the build qualifies for their tracks. Map each to a concrete role rather than bolting it on:
+
+- **OpenAI / Codex** — the **AI model layer**. Use the OpenAI API (a vision-capable GPT model) for both stages: photo/PDF → structured extraction, and reasoning (triage, differentials, letters). This is now the default for the "API-first" path below — swap the `anthropic` SDK in `requirements.txt` for `openai`. "Codex" can also mean the OpenAI coding agent used to *write* the code (dev-time), distinct from the runtime API — use both senses where they help.
+- **Exa** — **semantic retrieval** for the knowledge layer. Best fit is Track C's differential-diagnosis evidence / guideline lookup (the "RAG-lite knowledge base"): Exa search instead of, or feeding, a curated-JSON store. Could also enrich referral letters with current references.
+- **Cursor** — the **editor/agent the team builds with** (dev-time tool, not a runtime dependency). No code change; just where development happens.
+- **Zo** — **CONFIRM exact capability before relying on it.** Believed to be Zo Computer, an AI-native cloud computer/runtime — candidate use is hosting/deploying the live demo. Do not invent a specific integration until confirmed.
+
 ## The one decision still open: AI approach
 
-The interpretation layer is deliberately **stubbed**. Every `Skill.run()` and the `services/*` modules are marked `AI APPROACH PENDING`. Before implementing them, the team picks one path, which determines dependencies:
-- **API-first (Claude)** — `requirements.txt` only. Lightest; Claude vision + text.
+The interpretation layer is deliberately **stubbed**. Every `Skill.run()` and the `services/*` modules are marked `AI APPROACH PENDING`. Default path given the sponsor stack: **API-first using OpenAI** (vision + text), with **Exa** for retrieval. Alternatives if needed:
+- **API-first (OpenAI, default)** — `requirements.txt` only (swap `anthropic` → `openai`). Lightest; one provider for extraction + reasoning.
 - **Local ML** — also `requirements-ml.txt` (torch, transformers, scispaCy/UMLS; multi-GB, offline).
-- **Hybrid** — Claude for reasoning, local libs for DICOM/OCR/NER.
+- **Hybrid** — OpenAI for reasoning, local libs for DICOM/OCR/NER.
 
-When implementing, build the I/O shape against the existing stubs first; the model call drops in behind the same interface.
+Keep extraction and triage as **two stages with a checkable artifact between them** (normalized values + source kept for clinician verification), not one opaque call — required for auditability. Build the I/O shape against the existing stubs first; the model call drops in behind the same interface.
 
 ## Architecture
 
