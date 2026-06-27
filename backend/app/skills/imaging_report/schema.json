@@ -20,6 +20,19 @@
         "required": ["label", "bbox"]
       }
     },
+    "possible_diagnoses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "condition": { "type": "string" },
+          "rationale": { "type": "string" },
+          "confidence": { "type": "string", "enum": ["low", "medium", "high"] }
+        },
+        "required": ["condition", "rationale"]
+      }
+    },
+    "limitations": { "type": "array", "items": { "type": "string" } },
     "impression": { "type": "string" },
     "urgency": { "type": "string", "enum": ["routine", "soon", "urgent"] }
   },

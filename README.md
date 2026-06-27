@@ -49,12 +49,18 @@ uvicorn app.main:app --reload   # http://localhost:8000  (/docs for Swagger)
 System packages for full image/text support: `tesseract` (OCR) and `poppler`
 (`brew install tesseract poppler` on macOS).
 
+Protected API routes require a bearer token. For local demo use, the default
+token is `clinic-demo-token`; change it with `AUTH_TOKEN=...` in `.env`, or set
+`AUTH_ENABLED=false` to disable the gate during development.
+
 **Frontend**
 ```bash
 cd frontend
 npm install
 npm run dev   # http://localhost:5173  (proxies /api -> :8000)
 ```
+Sign in with the same access token configured for the backend.
+
 
 ## ⚠️ PHI / safety
 

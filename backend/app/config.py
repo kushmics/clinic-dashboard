@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     # Kept so the alternative provider path is not blocked.
     anthropic_api_key: str | None = None
     anthropic_model: str = "claude-opus-4-8"
+    # Prototype auth: replace this token outside local demo use.
+    auth_enabled: bool = True
+    auth_token: str = "clinic-demo-token"
     # Where uploaded labs/scans land. Keep PHI out of git.
     upload_dir: str = "./data/uploads"
 

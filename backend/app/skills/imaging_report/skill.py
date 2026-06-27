@@ -153,6 +153,8 @@ class ImagingReportSkill(Skill):
         draft.setdefault("modality", modality_label)
         draft.setdefault("findings", [])
         draft.setdefault("regions_of_interest", [])
+        draft.setdefault("possible_diagnoses", [])
+        draft.setdefault("limitations", [])
         draft.setdefault("impression", "")
         draft.setdefault("urgency", "routine")
 
@@ -207,6 +209,8 @@ def _fallback_result(
         "modality": modality_label,
         "findings": [],
         "regions_of_interest": [],
+        "possible_diagnoses": [],
+        "limitations": [],
         "impression": "AI analysis unavailable. Please review the image manually.",
         "urgency": "routine",
         "prepared_image_path": prepared_path,

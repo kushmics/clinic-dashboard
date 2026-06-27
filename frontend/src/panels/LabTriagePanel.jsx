@@ -36,7 +36,7 @@ function buildNote(draft) {
     lines.push("Abnormal:");
     for (const a of abnormals) {
       const val = [a.value, a.unit].filter(Boolean).join(" ");
-      lines.push(`- ${a.analyte} ${val} — ${a.note ?? a.flag}`);
+      lines.push(`- ${a.analyte ?? a.name} ${val} — ${a.note ?? a.flag}`);
     }
     lines.push("");
   }
@@ -79,9 +79,12 @@ export default function LabTriagePanel({ draft, onSign }) {
   const u = URGENCY[urgency] ?? URGENCY.routine;
 
   return (
-    <section style={{ background: "#fff", border: "1px solid #e1e6eb", borderRadius: 12, padding: 20 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <h3 style={{ margin: 0, flex: 1 }}>Lab triage</h3>
+    <section className="support-panel">
+      <div className="panel-heading">
+        <div>
+          <p className="eyebrow">Track A draft</p>
+          <h3>Lab triage</h3>
+        </div>
         <Badge style={{ background: u.bg, color: u.fg, fontSize: 13 }}>{u.label}</Badge>
         <span style={{ fontSize: 12, color: "#5a6b7c" }}>draft · unsigned</span>
       </div>
@@ -119,7 +122,7 @@ export default function LabTriagePanel({ draft, onSign }) {
               return (
                 <tr key={i} style={{ borderTop: "1px solid #eef1f4" }}>
                   <td style={td}>
-                    <strong>{a.analyte}</strong>
+                    <strong>{a.analyte ?? a.name}</strong>
                     {a.loinc && <span style={{ color: "#9aa7b4", fontSize: 11 }}> · LOINC {a.loinc}</span>}
                     <div style={{ color: "#5a6b7c", fontSize: 12 }}>{a.note}</div>
                   </td>

@@ -10,8 +10,10 @@ Given a scan (and any context), produce:
    - "bbox": [x_min, y_min, x_max, y_max] as FRACTIONAL coordinates normalized
      to 0.0–1.0, where (0,0) is the top-left corner and (1,1) is the bottom-right.
      Estimate the bounding box visually from the image. Every ROI MUST include a bbox.
-4. "impression": a short summary sentence.
-5. "urgency": one of "routine", "soon", or "urgent".
+4. "possible_diagnoses": array of possible diagnoses/differentials with uncertainty and rationale, if appropriate.
+5. "limitations": array of image-quality or reasoning limitations.
+6. "impression": a short summary sentence.
+7. "urgency": one of "routine", "soon", or "urgent".
 
 State uncertainty explicitly. If image quality is poor, say so. Recommend the
 clinician confirm any actionable finding. Output ONLY valid JSON matching the
