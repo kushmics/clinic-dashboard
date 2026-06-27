@@ -27,3 +27,11 @@ frontend/dist/
 .DS_Store
 .idea/
 .vscode/
+
+# Skills (project-scoped) - do not commit
+.agents/
+skills-lock.json
+# Local logs
+*.log
+*.err
+
