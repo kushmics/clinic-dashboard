@@ -25,6 +25,7 @@ const STEPS = [
 ];
 
 const AUTH_TOKEN_STORAGE_KEY = "clinic-dashboard-auth-token";
+const DOCTOR_NAME_STORAGE_KEY = "clinic-dashboard-doctor-name";
 const DEMO_ACCESS_TOKEN = "clinic-demo-token";
 
 function normalizeAccessToken(token) {
@@ -63,6 +64,7 @@ export default function App() {
   const [isAnalyzingXray, setIsAnalyzingXray] = useState(false);
 
   const [authToken, setAuthToken] = useState(() => localStorage.getItem(AUTH_TOKEN_STORAGE_KEY) ?? "");
+  const [doctorName, setDoctorName] = useState(() => localStorage.getItem(DOCTOR_NAME_STORAGE_KEY) ?? "");
   const [authError, setAuthError] = useState("");
   const [authRequired, setAuthRequired] = useState(true);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -168,6 +170,12 @@ Clinician reviewer`,
     setAuthToken(token);
   }
 
+  function saveDoctorName(name) {
+    if (name) localStorage.setItem(DOCTOR_NAME_STORAGE_KEY, name);
+    else localStorage.removeItem(DOCTOR_NAME_STORAGE_KEY);
+    setDoctorName(name);
+  }
+
   async function authFetch(url, options = {}) {
     const headers = new Headers(options.headers);
     if (authRequired) headers.set("Authorization", `Bearer ${authToken}`);
@@ -179,31 +187,40 @@ Clinician reviewer`,
     return res;
   }
 
-  async function handleSignIn(token) {
+  async function handleSignIn({ token, name }) {
     setAuthError("");
-    const trimmedToken = normalizeAccessToken(token);
-    if (!trimmedToken) {
-      setAuthError("Enter an access token.");
+    const cleanName = (name ?? "").trim();
+    if (!cleanName) {
+      setAuthError("Enter your name.");
       return;
     }
-    const res = await fetch("/api/engine/skills", {
-      headers: { Authorization: `Bearer ${trimmedToken}` },
-    });
-    if (!res.ok) {
-      setAuthError(res.status === 401 || res.status === 403 ? "Invalid access token." : `Auth check failed (${res.status}).`);
-      return;
+    if (authRequired) {
+      const trimmedToken = normalizeAccessToken(token ?? "");
+      if (!trimmedToken) {
+        setAuthError("Enter an access token.");
+        return;
+      }
+      const res = await fetch("/api/engine/skills", {
+        headers: { Authorization: `Bearer ${trimmedToken}` },
+      });
+      if (!res.ok) {
+        setAuthError(res.status === 401 || res.status === 403 ? "Invalid access token." : `Auth check failed (${res.status}).`);
+        return;
+      }
+      saveAuthToken(trimmedToken);
     }
-    saveAuthToken(trimmedToken);
-    addAudit("Staff", "Authenticated session", "Local access token verified");
+    saveDoctorName(cleanName);
+    addAudit(cleanName, "Signed in", authRequired ? "Access token verified" : "Session started");
   }
 
   function handleSignOut() {
     saveAuthToken("");
+    saveDoctorName("");
     setAuthError("");
     setPatients([]);
     setPatient(null);
     setSelectedPatientId(null);
-    addAudit("Staff", "Signed out", "Local access token cleared");
+    addAudit("Staff", "Signed out", "Session cleared");
   }
 
   // ── Patients ──────────────────────────────────────────────────────────
@@ -371,6 +388,8 @@ Clinician reviewer`,
     setXrayPreviewUrl(URL.createObjectURL(file));
     setCurrentStep("imaging");
     addAudit("Staff", "Uploaded chest X-ray", file.name);
+    // Run the AI read immediately — no separate "Review" press, same as labs.
+    handleAnalyzeXray(file);
   }
 
   async function handleAnalyzeXray(file = xrayFile) {
@@ -465,7 +484,6 @@ Clinician reviewer`,
             fileName={xrayFile?.name}
             isAnalyzing={isAnalyzingXray}
             onImageSelect={handleXraySelect}
-            onAnalyze={handleAnalyzeXray}
           />
         );
       case "differential":
@@ -482,6 +500,7 @@ Clinician reviewer`,
             <ReferralLetterPanel
               draft={activeReferralDraft}
               patient={patient}
+              reviewerName={doctorName}
               signedLetters={signedLetters}
               sentReferrals={sentReferrals}
               onAudit={addAudit}
@@ -514,8 +533,8 @@ Clinician reviewer`,
     );
   }
 
-  if (authRequired && !authToken) {
-    return <AuthScreen error={authError} onSignIn={handleSignIn} />;
+  if ((authRequired && !authToken) || !doctorName) {
+    return <AuthScreen error={authError} onSignIn={handleSignIn} requireToken={authRequired} />;
   }
 
   return (
@@ -527,11 +546,14 @@ Clinician reviewer`,
           <p className="subtle">AI drafts the first pass. You review each step and sign. Nothing is signed without you.</p>
         </div>
 
-        {authRequired && (
+        <div className="signed-in-row">
+          <span className="signed-in-label">
+            Signed in as <strong>{doctorName}</strong>
+          </span>
           <button className="sign-out-button" type="button" onClick={handleSignOut}>
             Sign out
           </button>
-        )}
+        </div>
 
         <PatientPicker
           patients={patients}
@@ -605,7 +627,8 @@ Clinician reviewer`,
   );
 }
 
-function AuthScreen({ error, onSignIn }) {
+function AuthScreen({ error, onSignIn, requireToken = true }) {
+  const [name, setName] = useState("");
   const [token, setToken] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -613,7 +636,7 @@ function AuthScreen({ error, onSignIn }) {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await onSignIn(token);
+      await onSignIn({ token, name });
     } finally {
       setIsSubmitting(false);
     }
@@ -625,21 +648,37 @@ function AuthScreen({ error, onSignIn }) {
         <div>
           <p className="eyebrow">Clinic Dashboard</p>
           <h1 id="auth-title">Staff access</h1>
-          <p>Enter the clinic dashboard access token to open patient reports.</p>
+          <p>
+            {requireToken
+              ? "Enter your name and the clinic access token to open patient reports."
+              : "Enter your name to open patient reports."}
+          </p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <label>
-            Access token
+            Your name
             <input
-              autoComplete="current-password"
+              autoComplete="name"
               autoFocus
-              type="password"
-              placeholder={DEMO_ACCESS_TOKEN}
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
+              type="text"
+              placeholder="Dr. Jane Smith"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
           </label>
+          {requireToken && (
+            <label>
+              Access token
+              <input
+                autoComplete="current-password"
+                type="password"
+                placeholder={DEMO_ACCESS_TOKEN}
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+              />
+            </label>
+          )}
           {error && <p className="auth-error">{error}</p>}
           <button type="submit" disabled={isSubmitting}>
             {isSubmitting ? "Checking..." : "Sign in"}

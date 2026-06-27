@@ -7,14 +7,15 @@ export default function ImagingReportPanel({
   fileName,
   isAnalyzing = false,
   onImageSelect,
-  onAnalyze,
 }) {
   const possibleDiagnoses = draft?.possible_diagnoses ?? [];
   const limitations = draft?.limitations ?? [];
 
   function handleFileChange(event) {
     const file = event.target.files?.[0];
+    // Upload + AI read fire together — same one-step flow as the lab report.
     if (file) onImageSelect?.(file);
+    event.target.value = "";
   }
 
   return (
@@ -29,27 +30,21 @@ export default function ImagingReportPanel({
 
       {draft?.generation_note && <p className="generation-note">{draft.generation_note}</p>}
 
-      <div className="imaging-workbench">
-        <div className="scan-viewer">
-          {imagePreviewUrl ? (
-            <img src={imagePreviewUrl} alt="Uploaded chest X-ray preview" />
-          ) : (
-            <span>Upload chest X-ray</span>
-          )}
-        </div>
-        <div className="scan-actions">
-          <label className="image-upload-button">
-            <span>{fileName || "Choose X-ray image"}</span>
-            <input accept="image/*" type="file" onChange={handleFileChange} />
-          </label>
-          <button type="button" onClick={() => onAnalyze?.()} disabled={!imagePreviewUrl || isAnalyzing}>
-            {isAnalyzing ? "Analyzing..." : "Run AI preliminary read"}
-          </button>
-          <p>
-            AI output is a first-pass draft for clinician review. It is not a final diagnosis.
-          </p>
-        </div>
-      </div>
+      <label className="scan-dropzone">
+        {imagePreviewUrl ? (
+          <img src={imagePreviewUrl} alt="Uploaded chest X-ray preview" />
+        ) : (
+          <span className="scan-dropzone-prompt">
+            <strong>Click anywhere to upload a chest X-ray</strong>
+            <small>The AI preliminary read runs automatically once the scan is added.</small>
+          </span>
+        )}
+        {isAnalyzing && <span className="scan-analyzing">Analyzing scan…</span>}
+        <input accept="image/*" type="file" onChange={handleFileChange} disabled={isAnalyzing} />
+      </label>
+      <p className="scan-disclaimer">
+        {fileName ? `${fileName} · ` : ""}AI output is a first-pass draft for clinician review. It is not a final diagnosis.
+      </p>
 
       <h4>Findings</h4>
       <ul className="finding-list">
@@ -57,18 +52,26 @@ export default function ImagingReportPanel({
           <li key={finding}>{finding}</li>
         ))}
       </ul>
-      {possibleDiagnoses.length > 0 && (
+      {draft && (
         <>
           <h4>Possible diagnoses</h4>
-          <ul className="diagnosis-list">
-            {possibleDiagnoses.map((item) => (
-              <li key={`${item.condition}-${item.rationale}`}>
-                <strong>{item.condition}</strong>
-                <span>{item.confidence ?? "low"} confidence</span>
-                <p>{item.rationale}</p>
-              </li>
-            ))}
-          </ul>
+          {possibleDiagnoses.length > 0 ? (
+            <ul className="diagnosis-list">
+              {possibleDiagnoses.map((item) => (
+                <li key={`${item.condition}-${item.rationale}`}>
+                  <strong>{item.condition}</strong>
+                  {item.confidence && (
+                    <span className={`confidence-chip ${item.confidence}`}>{item.confidence} confidence</span>
+                  )}
+                  <p>{item.rationale}</p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted-note">
+              No imaging-based diagnoses suggested on this preliminary read — see findings and impression above.
+            </p>
+          )}
         </>
       )}
       <h4>Impression</h4>

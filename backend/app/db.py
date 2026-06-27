@@ -53,7 +53,14 @@ _SEED: list[dict] = [
             "modality": "Chest X-Ray",
             "findings": ["Mild cardiomegaly without focal consolidation.",
                          "No pleural effusion or pneumothorax on preliminary review."],
-            "possible_diagnoses": [],
+            "possible_diagnoses": [
+                {"condition": "Cardiomegaly / early cardiac strain",
+                 "rationale": "Enlarged cardiac silhouette on a background of exertional dyspnoea and anaemia.",
+                 "confidence": "medium"},
+                {"condition": "High-output state from anaemia",
+                 "rationale": "Low haemoglobin can enlarge the cardiac shadow without primary heart disease.",
+                 "confidence": "low"},
+            ],
             "limitations": ["Preliminary AI read; clinician correlation required."],
             "impression": "Mild cardiomegaly. Correlate clinically for anaemia-related symptoms and cardiac risk.",
             "urgency": "urgent",
@@ -85,7 +92,11 @@ _SEED: list[dict] = [
         "imaging_draft": {
             "modality": "Chest X-Ray",
             "findings": ["Clear lung fields. No focal consolidation or effusion."],
-            "possible_diagnoses": [],
+            "possible_diagnoses": [
+                {"condition": "No acute cardiopulmonary process",
+                 "rationale": "Clear lung fields with a normal cardiac silhouette on preliminary review.",
+                 "confidence": "high"},
+            ],
             "limitations": ["Preliminary AI read; clinician correlation required."],
             "impression": "No acute cardiopulmonary abnormality on preliminary review.",
             "urgency": "non-urgent",

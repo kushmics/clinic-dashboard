@@ -26,7 +26,11 @@ export default function DifferentialDxPanel({ draft, isGenerating = false, onGen
       )}
 
       {differentials.length === 0 && (
-        <p style={{ color: "#5a6b7c" }}>No ranked differentials yet.</p>
+        <p style={{ color: "#5a6b7c" }}>
+          {isGenerating
+            ? "Generating ranked differentials from the case…"
+            : "No ranked differentials from the structured labs. Add or upload abnormal results, or regenerate."}
+        </p>
       )}
 
       {differentials.map((dx, i) => (

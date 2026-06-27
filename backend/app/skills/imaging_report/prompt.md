@@ -10,7 +10,14 @@ Given a scan (and any context), produce:
    - "bbox": [x_min, y_min, x_max, y_max] as FRACTIONAL coordinates normalized
      to 0.0–1.0, where (0,0) is the top-left corner and (1,1) is the bottom-right.
      Estimate the bounding box visually from the image. Every ROI MUST include a bbox.
-4. "possible_diagnoses": array of possible diagnoses/differentials with uncertainty and rationale, if appropriate.
+4. "possible_diagnoses": array of possible diagnoses/differentials, if appropriate. Each is an object with:
+   - "condition": the candidate diagnosis.
+   - "rationale": the imaging features that support it.
+   - "confidence": REQUIRED — one of "low", "medium", or "high", reflecting how
+     strongly the visible findings support this diagnosis. Do not default every
+     item to "low"; calibrate honestly (e.g. an unambiguous large effusion is
+     "high"). Omit a candidate entirely rather than listing it if there is no
+     imaging support for it.
 5. "limitations": array of image-quality or reasoning limitations.
 6. "impression": a short summary sentence.
 7. "urgency": one of "routine", "soon", or "urgent".

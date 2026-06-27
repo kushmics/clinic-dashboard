@@ -66,7 +66,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 }
 
 .app-shell {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
 }
@@ -80,6 +81,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   display: flex;
   flex-direction: column;
   gap: 18px;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .sidebar h1,
@@ -126,10 +129,38 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   font-weight: 700;
 }
 
+.signed-in-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid rgba(209, 229, 238, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 8px 12px;
+}
+
+.signed-in-label {
+  color: #b8c7d6;
+  font-size: 0.85rem;
+  line-height: 1.3;
+}
+
+.signed-in-label strong {
+  display: block;
+  color: #eaf4fb;
+  font-size: 0.95rem;
+}
+
 .sign-out-button {
-  border-color: rgba(209, 229, 238, 0.28);
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(209, 229, 238, 0.28);
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.08);
   color: #e9fbff;
+  font-weight: 700;
 }
 
 .upload-button input {
@@ -245,6 +276,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .workspace {
   min-width: 0;
   padding: 28px;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .case-header {
@@ -466,35 +499,77 @@ textarea {
   margin-top: 16px;
 }
 
-.mode-row {
+/* Letter formatting toolbar (basic bold/italic + font size — no markdown) */
+.format-toolbar {
   display: flex;
-  justify-content: flex-end;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   margin-top: 16px;
-}
-
-.segmented-control {
-  display: inline-grid;
-  grid-template-columns: 1fr 1fr;
+  padding: 8px 10px;
   border: 1px solid #cbd5df;
-  border-radius: 8px;
-  overflow: hidden;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  background: #f4f8fb;
+}
+
+.format-group {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.format-btn {
+  min-width: 38px;
+  min-height: 34px;
+  border: 1px solid #cbd5df;
+  border-radius: 6px;
   background: #ffffff;
+  color: #33475b;
+  font-size: 0.95rem;
 }
 
-.segmented-control button {
-  min-width: 92px;
-  min-height: 36px;
-  border: 0;
-  background: transparent;
-  color: #435468;
-  font-weight: 800;
+.format-btn:hover {
+  background: #e8f1f6;
 }
 
-.segmented-control button.active {
-  background: #163654;
-  color: #ffffff;
+.font-size-control {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: #465668;
+}
+
+.font-size-control select {
+  width: auto;
+  min-height: 34px;
+  padding: 4px 8px;
+}
+
+.format-toolbar .word-count {
+  margin-left: auto;
+}
+
+.letter-editor-rich {
+  min-height: 440px;
+  border: 1px solid #cbd5df;
+  border-radius: 0 0 8px 8px;
+  background: #fffdf9;
+  color: #1d2a38;
+  padding: 28px;
+  line-height: 1.6;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  outline: none;
+}
+
+.letter-editor-rich:focus {
+  border-color: #2f7488;
+  box-shadow: inset 0 0 0 1px rgba(47, 116, 136, 0.35);
+}
+
+.letter-editor-rich:empty::before {
+  content: attr(data-placeholder);
+  color: #9aa7b4;
 }
 
 .generate-action {
@@ -745,28 +820,29 @@ th {
   margin-bottom: 18px;
 }
 
-.imaging-workbench {
-  display: grid;
-  grid-template-columns: minmax(280px, 1fr) 280px;
-  gap: 16px;
-  align-items: stretch;
-  margin-bottom: 18px;
-}
-
-.scan-viewer {
-  min-height: 420px;
-  border: 1px solid #cdd7e2;
-  border-radius: 8px;
-  background: #111820;
+/* Chest X-ray drop zone — click anywhere to upload, mirrors the lab .drop-zone */
+.scan-dropzone {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 420px;
+  border: 1px dashed #4a6478;
+  border-radius: 8px;
+  background: #111820;
   overflow: hidden;
   color: #b9c8d6;
   font-weight: 800;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 140ms ease;
 }
 
-.scan-viewer img {
+.scan-dropzone:hover {
+  border-color: #7bd6e8;
+}
+
+.scan-dropzone img {
   width: 100%;
   height: 100%;
   max-height: 560px;
@@ -774,49 +850,42 @@ th {
   display: block;
 }
 
-.scan-actions {
-  border: 1px solid #dbe4ec;
-  border-radius: 8px;
-  background: #f8fbfd;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.scan-dropzone-prompt {
+  display: grid;
+  gap: 8px;
+  padding: 24px;
 }
 
-.scan-actions button,
-.image-upload-button {
-  min-height: 42px;
-  border: 1px solid #2f7488;
-  border-radius: 8px;
-  background: #ffffff;
-  color: #205e70;
+.scan-dropzone-prompt strong {
+  font-size: 1.05rem;
+  color: #e6f3fb;
+}
+
+.scan-dropzone-prompt small {
+  color: #8aa6bd;
+  font-weight: 600;
+}
+
+.scan-analyzing {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 12px;
+  background: rgba(11, 18, 26, 0.72);
+  color: #eaf4fb;
   font-weight: 800;
-  text-align: center;
 }
 
-.scan-actions button {
-  background: #205e70;
-  color: #ffffff;
-}
-
-.image-upload-button {
-  position: relative;
-}
-
-.image-upload-button input {
+.scan-dropzone input {
   position: absolute;
   inset: 0;
   opacity: 0;
   cursor: pointer;
 }
 
-.scan-actions p {
-  margin: 0;
+.scan-disclaimer {
+  margin: 10px 0 18px;
   color: #607080;
   font-size: 0.9rem;
   line-height: 1.45;
@@ -852,6 +921,26 @@ th {
 
 .diagnosis-list p {
   margin: 8px 0 0;
+}
+
+.diagnosis-list .confidence-chip {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.confidence-chip.high   { background: #e6f5ea; color: #1b6b3a; }
+.confidence-chip.medium { background: #fff4d9; color: #8a6d00; }
+.confidence-chip.low    { background: #eef2f6; color: #56697c; }
+
+.muted-note {
+  color: #5a6b7c;
+  margin: 0 0 18px;
 }
 
 .red-flags {
@@ -908,6 +997,18 @@ th {
   .dashboard-grid,
   .intake-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* Stack on mobile: let the page scroll as one column again. */
+  .app-shell {
+    height: auto;
+    overflow: visible;
+  }
+
+  .sidebar,
+  .workspace {
+    height: auto;
+    overflow: visible;
   }
 
   .sidebar {
@@ -982,6 +1083,7 @@ th {
   border-top: 1px solid rgba(173, 201, 219, 0.18);
   padding-top: 16px;
   min-height: 0;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
 }
@@ -989,7 +1091,8 @@ th {
 .sidebar-activity .audit-heading span { color: #8aa6bd; }
 .sidebar-activity .audit-list {
   overflow-y: auto;
-  max-height: 38vh;
+  flex: 1 1 auto;
+  min-height: 0;
   padding-right: 4px;
 }
 .sidebar-activity .audit-list li { border-left-color: #4f8aa3; }
@@ -1340,9 +1443,10 @@ th {
 .patient-picker-head h3 { margin: 0; font-size: 1rem; color: #eaf4fb; }
 .patient-picker-head span { color: #8aa6bd; font-size: 0.85rem; }
 .patient-picker-empty { color: #8aa6bd; font-size: 0.85rem; margin: 0; }
+.patient-picker { flex: 0 0 auto; }
 .patient-picker ul {
   list-style: none; margin: 0; padding: 0;
-  display: grid; gap: 8px; max-height: 34vh; overflow-y: auto; padding-right: 4px;
+  display: grid; gap: 8px; max-height: 28vh; overflow-y: auto; padding-right: 4px;
 }
 .patient-picker button {
   width: 100%; text-align: left; display: grid; gap: 5px;

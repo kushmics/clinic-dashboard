@@ -1,11 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // Track D. Renders the referral_letter draft. The letter is drafted for the
-// clinician automatically; here they edit it and drive one morphing action
-// button: Sign letter -> Send referral -> Sent.
+// clinician automatically; here they edit it as plain text (basic bold/italic
+// + a font-size control — no markdown), then drive one morphing action button:
+// Sign letter -> Send referral -> Sent.
+const FONT_SIZES = [
+  { label: "Small", value: 14 },
+  { label: "Normal", value: 16 },
+  { label: "Large", value: 19 },
+  { label: "X-Large", value: 22 },
+];
+
 export default function ReferralLetterPanel({
   draft,
   patient,
+  reviewerName,
   signedLetters = [],
   sentReferrals = [],
   onAudit,
@@ -16,34 +25,59 @@ export default function ReferralLetterPanel({
   const [specialty, setSpecialty] = useState("");
   const [reason, setReason] = useState("");
   const [letter, setLetter] = useState("");
-  const [reviewer, setReviewer] = useState("Dr. Reviewer");
+  const [reviewer, setReviewer] = useState(reviewerName || "Dr. Reviewer");
   const [isSigned, setIsSigned] = useState(false);
   const [isSent, setIsSent] = useState(false);
-  const [mode, setMode] = useState("edit");
+  const [fontSize, setFontSize] = useState(16);
   const [copyState, setCopyState] = useState("");
+  const editorRef = useRef(null);
 
+  // Load a fresh draft into the editor. innerText keeps it pure text and
+  // preserves line breaks; bold/italic are applied visually via execCommand.
   useEffect(() => {
+    const text = draft?.letter_markdown ?? "";
     setSpecialty(draft?.recipient_specialty ?? "");
     setReason(draft?.reason_for_referral ?? "");
-    setLetter(draft?.letter_markdown ?? "");
+    setLetter(text);
     setIsSigned(false);
     setIsSent(false);
     setCopyState("");
+    if (editorRef.current) editorRef.current.innerText = text;
   }, [draft]);
+
+  useEffect(() => {
+    if (reviewerName) setReviewer(reviewerName);
+  }, [reviewerName]);
 
   const wordCount = useMemo(() => letter.trim().split(/\s+/).filter(Boolean).length, [letter]);
   const canSign = reviewer.trim() && specialty.trim() && reason.trim() && letter.trim();
 
+  function resetSignature() {
+    setIsSigned(false);
+    setIsSent(false);
+  }
+
   function handleFieldEdit(callback) {
     return (event) => {
       callback(event.target.value);
-      setIsSigned(false);
-      setIsSent(false);
+      resetSignature();
     };
   }
 
   function handleFieldAudit(auditLabel) {
     onAudit?.("Clinician", auditLabel, "Referral draft changed; signature reset");
+  }
+
+  function handleEditorInput() {
+    setLetter(editorRef.current?.innerText ?? "");
+    resetSignature();
+  }
+
+  // Apply inline formatting to the current selection inside the editor.
+  function format(command) {
+    editorRef.current?.focus();
+    document.execCommand(command, false, null);
+    handleEditorInput();
   }
 
   function handleSign() {
@@ -115,42 +149,42 @@ export default function ReferralLetterPanel({
             value={reviewer}
             onChange={(event) => {
               setReviewer(event.target.value);
-              setIsSigned(false);
-              setIsSent(false);
+              resetSignature();
             }}
           />
         </label>
       </div>
 
-      <div className="mode-row">
-        <div className="segmented-control" aria-label="Letter mode">
-          <button className={mode === "edit" ? "active" : ""} onClick={() => setMode("edit")} type="button">Edit</button>
-          <button className={mode === "preview" ? "active" : ""} onClick={() => setMode("preview")} type="button">Preview</button>
+      <div className="format-toolbar" role="toolbar" aria-label="Letter formatting">
+        <div className="format-group">
+          <button type="button" className="format-btn" onMouseDown={(e) => e.preventDefault()} onClick={() => format("bold")} title="Bold" aria-label="Bold">
+            <b>B</b>
+          </button>
+          <button type="button" className="format-btn" onMouseDown={(e) => e.preventDefault()} onClick={() => format("italic")} title="Italic" aria-label="Italic">
+            <i>I</i>
+          </button>
         </div>
+        <label className="font-size-control">
+          Font size
+          <select value={fontSize} onChange={(e) => setFontSize(Number(e.target.value))}>
+            {FONT_SIZES.map((size) => (
+              <option key={size.value} value={size.value}>{size.label}</option>
+            ))}
+          </select>
+        </label>
         <span className="word-count">{wordCount} words</span>
       </div>
 
-      <div className="letter-stage">
-        {mode === "edit" ? (
-          <label className="letter-editor">
-            Letter draft
-            <textarea
-              value={letter}
-              onChange={handleFieldEdit(setLetter)}
-              onBlur={() => handleFieldAudit("Edited referral letter")}
-              placeholder={isGenerating ? "Drafting…" : "The letter will appear here."}
-            />
-          </label>
-        ) : (
-          <article className="letter-preview">
-            {letter.split("\n").map((line, index) => (
-              <p key={`${line}-${index}`} className={line.trim() ? "" : "empty-line"}>
-                {line || " "}
-              </p>
-            ))}
-          </article>
-        )}
-      </div>
+      <div
+        ref={editorRef}
+        className="letter-editor-rich"
+        contentEditable={!isSent}
+        suppressContentEditableWarning
+        onInput={handleEditorInput}
+        onBlur={() => handleFieldAudit("Edited referral letter")}
+        style={{ fontSize: `${fontSize}px` }}
+        data-placeholder={isGenerating ? "Drafting…" : "The letter will appear here."}
+      />
 
       <div className="letter-footer">
         <button type="button" className="letter-copy" onClick={handleCopy} disabled={!letter.trim()}>
