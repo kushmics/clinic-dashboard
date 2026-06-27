@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "properties": {
+    "differentials": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "condition": { "type": "string" },
+          "likelihood": { "type": "string", "enum": ["low", "moderate", "high"] },
+          "supporting": { "type": "array", "items": { "type": "string" } },
+          "next_steps": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["condition", "likelihood"]
+      }
+    },
+    "red_flags": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": ["differentials"]
+}

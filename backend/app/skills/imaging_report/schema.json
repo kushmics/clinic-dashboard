@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "properties": {
+    "modality": { "type": "string" },
+    "findings": { "type": "array", "items": { "type": "string" } },
+    "regions_of_interest": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": { "type": "string" },
+          "bbox": { "type": "array", "items": { "type": "number" } }
+        },
+        "required": ["label"]
+      }
+    },
+    "impression": { "type": "string" },
+    "urgency": { "type": "string", "enum": ["routine", "soon", "urgent"] }
+  },
+  "required": ["findings", "impression", "urgency"]
+}

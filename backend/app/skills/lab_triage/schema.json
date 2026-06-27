@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "properties": {
+    "abnormals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "analyte": { "type": "string" },
+          "value": { "type": "string" },
+          "reference_range": { "type": "string" },
+          "flag": { "type": "string", "enum": ["low", "high", "critical"] }
+        },
+        "required": ["analyte", "value", "flag"]
+      }
+    },
+    "urgency": { "type": "string", "enum": ["routine", "soon", "urgent"] },
+    "summary": { "type": "string" }
+  },
+  "required": ["abnormals", "urgency", "summary"]
+}

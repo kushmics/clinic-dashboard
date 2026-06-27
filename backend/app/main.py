@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import imaging, ingestion, text
+from app.routers import engine, imaging, ingestion, text
 
 app = FastAPI(title=settings.app_name, version="0.1.0")
 
@@ -20,6 +20,7 @@ app.add_middleware(
 )
 
 app.include_router(ingestion.router)
+app.include_router(engine.router)
 app.include_router(imaging.router)
 app.include_router(text.router)
 

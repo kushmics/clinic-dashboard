@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "properties": {
+    "recipient_specialty": { "type": "string" },
+    "reason_for_referral": { "type": "string" },
+    "clinical_summary": { "type": "string" },
+    "relevant_findings": { "type": "array", "items": { "type": "string" } },
+    "letter_markdown": { "type": "string" }
+  },
+  "required": ["recipient_specialty", "reason_for_referral", "letter_markdown"]
+}
