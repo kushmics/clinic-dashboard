@@ -3,6 +3,8 @@ import DifferentialDxPanel from "./panels/DifferentialDxPanel.jsx";
 import ImagingReportPanel from "./panels/ImagingReportPanel.jsx";
 import LabTriagePanel from "./panels/LabTriagePanel.jsx";
 import ReferralLetterPanel from "./panels/ReferralLetterPanel.jsx";
+import ReviewStepper from "./components/ReviewStepper.jsx";
+import EvidenceRail from "./components/EvidenceRail.jsx";
 
 const demoCase = {
   patient: {
@@ -46,19 +48,15 @@ const initialAudit = [
   { actor: "AI", action: "Drafts generated", time: "09:13", detail: "Lab, imaging, differential, and referral drafts ready for review" },
 ];
 
-const workflowStages = [
-  { id: "upload", label: "Upload", panel: "upload", status: "done" },
-  { id: "drafts", label: "AI drafts", panel: "lab", status: "done" },
-  { id: "review", label: "Review", panel: "dx", status: "active" },
-  { id: "sign", label: "Sign", panel: "referral", status: "waiting" },
-];
-
-const reportSections = [
-  { id: "upload", label: "Case intake", detail: "Source files" },
-  { id: "lab", label: "Lab triage", detail: "4 abnormal flags" },
-  { id: "imaging", label: "Imaging report", detail: "Preliminary read" },
-  { id: "dx", label: "Differentials", detail: "3 ranked considerations" },
-  { id: "referral", label: "Referral letter", detail: "Review and sign" },
+// One guided first-pass flow. Each step reviews one AI draft; the clinician
+// advances when satisfied and signs at the end. Steps stay clickable so a
+// reviewer can jump back to recheck anything.
+const STEPS = [
+  { id: "intake", n: 1, label: "Intake", instruction: "Upload the patient's lab report to start the first pass." },
+  { id: "lab", n: 2, label: "Lab triage", instruction: "Check the AI's abnormal-value flags and urgency. Confirm nothing critical was missed." },
+  { id: "imaging", n: 3, label: "Imaging", instruction: "Upload the chest X-ray and review the preliminary read against the scan." },
+  { id: "differential", n: 4, label: "Differential", instruction: "Review the ranked differentials and their cited next steps." },
+  { id: "signoff", n: 5, label: "Referral & sign-off", instruction: "Check the evidence on the right, edit the letter, then sign." },
 ];
 
 const AUTH_TOKEN_STORAGE_KEY = "clinic-dashboard-auth-token";
@@ -72,8 +70,8 @@ function normalizeAccessToken(token) {
 export default function App() {
   const [status, setStatus] = useState("");
   const [caseData] = useState(demoCase);
-  const [activePanel, setActivePanel] = useState("referral");
-  const [activeStage, setActiveStage] = useState("sign");
+  const [currentStep, setCurrentStep] = useState("intake");
+  const [reviewedSteps, setReviewedSteps] = useState(() => new Set());
   const [auditLog, setAuditLog] = useState(initialAudit);
   const [signedLetters, setSignedLetters] = useState([]);
   const [sentReferrals, setSentReferrals] = useState([]);
@@ -240,8 +238,7 @@ Clinician reviewer`,
         nextLabDraft = result.result.draft;
         setGeneratedLabDraft(nextLabDraft);
         setGeneratedReferralDraft(null);
-        setActivePanel("lab");
-        setActiveStage("drafts");
+        setCurrentStep("lab");
       }
       setStatus(`${result.filename} uploaded`);
       addAudit("Staff", "Uploaded source file", result.filename);
@@ -332,8 +329,7 @@ Clinician reviewer`,
       if (!res.ok) throw new Error(`Referral generation failed (${res.status})`);
       const result = await res.json();
       setGeneratedReferralDraft(result.draft);
-      setActivePanel("referral");
-      setActiveStage("sign");
+      setCurrentStep("signoff");
       if (result.draft?.generation_note) {
         addAudit("System", "Referral generation used fallback", result.draft.generation_note);
       } else {
@@ -352,8 +348,7 @@ Clinician reviewer`,
     setGeneratedReferralDraft(null);
     if (xrayPreviewUrl) URL.revokeObjectURL(xrayPreviewUrl);
     setXrayPreviewUrl(URL.createObjectURL(file));
-    setActivePanel("imaging");
-    setActiveStage("drafts");
+    setCurrentStep("imaging");
     addAudit("Staff", "Uploaded chest X-ray", file.name);
   }
 
@@ -369,8 +364,7 @@ Clinician reviewer`,
       const nextImagingDraft = result.draft;
       setGeneratedImagingDraft(nextImagingDraft);
       setGeneratedReferralDraft(null);
-      setActivePanel("imaging");
-      setActiveStage("review");
+      setCurrentStep("imaging");
       await generateDifferentialDraft(activeLabDraft, nextImagingDraft, "Imaging draft added to differential context");
       if (result.draft?.generation_note) {
         addAudit("System", "Imaging generation used fallback", result.draft.generation_note);
@@ -384,59 +378,94 @@ Clinician reviewer`,
     }
   }
 
-  function goToStage(stage) {
-    setActiveStage(stage.id);
-    setActivePanel(stage.panel);
-  }
+  const stepIndex = STEPS.findIndex((s) => s.id === currentStep);
+  const step = STEPS[stepIndex] ?? STEPS[0];
+  const isLastStep = stepIndex === STEPS.length - 1;
+  const nextStep = STEPS[stepIndex + 1];
 
-  function goToPanel(panel) {
-    setActivePanel(panel);
-    if (panel === "referral") setActiveStage("sign");
-    if (panel === "lab" || panel === "imaging") setActiveStage("drafts");
-    if (panel === "dx") setActiveStage("review");
-  }
-
-  const panels = {
-    upload: (
-      <CaseIntakePanel
-        patient={caseData.patient}
-        status={status}
-        onUpload={handleUpload}
-        urgency={urgency}
-      />
-    ),
-    lab: <LabTriagePanel draft={activeLabDraft} />,
-    imaging: (
-      <ImagingReportPanel
-        draft={activeImagingDraft}
-        imagePreviewUrl={xrayPreviewUrl}
-        fileName={xrayFile?.name}
-        isAnalyzing={isAnalyzingXray}
-        onImageSelect={handleXraySelect}
-        onAnalyze={handleAnalyzeXray}
-      />
-    ),
-    dx: (
-      <DifferentialDxPanel
-        draft={activeDifferentialDraft}
-        isGenerating={isGeneratingDifferential}
-        onGenerate={() => generateDifferentialDraft()}
-      />
-    ),
-    referral: (
-      <ReferralLetterPanel
-        draft={activeReferralDraft}
-        patient={caseData.patient}
-        signedLetters={signedLetters}
-        sentReferrals={sentReferrals}
-        onAudit={addAudit}
-        onGenerate={handleGenerateReferral}
-        onSigned={handleSignedLetter}
-        onSent={handleSentReferral}
-        isGenerating={isGeneratingReferral}
-      />
-    ),
+  const dxUrgency = (activeDifferentialDraft?.red_flags?.length ?? 0) > 0 ? "urgent" : null;
+  const urgencyByStep = {
+    lab: activeLabDraft?.urgency,
+    imaging: activeImagingDraft?.urgency,
+    differential: dxUrgency,
   };
+
+  function goToStep(id) {
+    setCurrentStep(id);
+  }
+
+  function markReviewed(id) {
+    setReviewedSteps((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }
+
+  function goNext() {
+    markReviewed(currentStep);
+    if (nextStep) setCurrentStep(nextStep.id);
+  }
+
+  function goBack() {
+    const prev = STEPS[stepIndex - 1];
+    if (prev) setCurrentStep(prev.id);
+  }
+
+  function renderStep() {
+    switch (currentStep) {
+      case "intake":
+        return (
+          <CaseIntakePanel patient={caseData.patient} status={status} onUpload={handleUpload} urgency={urgency} />
+        );
+      case "lab":
+        return <LabTriagePanel draft={activeLabDraft} />;
+      case "imaging":
+        return (
+          <ImagingReportPanel
+            draft={activeImagingDraft}
+            imagePreviewUrl={xrayPreviewUrl}
+            fileName={xrayFile?.name}
+            isAnalyzing={isAnalyzingXray}
+            onImageSelect={handleXraySelect}
+            onAnalyze={handleAnalyzeXray}
+          />
+        );
+      case "differential":
+        return (
+          <DifferentialDxPanel
+            draft={activeDifferentialDraft}
+            isGenerating={isGeneratingDifferential}
+            onGenerate={() => generateDifferentialDraft()}
+          />
+        );
+      case "signoff":
+        return (
+          <div className="signoff-layout">
+            <ReferralLetterPanel
+              draft={activeReferralDraft}
+              patient={caseData.patient}
+              signedLetters={signedLetters}
+              sentReferrals={sentReferrals}
+              onAudit={addAudit}
+              onGenerate={handleGenerateReferral}
+              onSigned={handleSignedLetter}
+              onSent={handleSentReferral}
+              isGenerating={isGeneratingReferral}
+            />
+            <EvidenceRail
+              xrayPreviewUrl={xrayPreviewUrl}
+              imagingDraft={activeImagingDraft}
+              labDraft={activeLabDraft}
+              differentialDraft={activeDifferentialDraft}
+              onJumpToStep={goToStep}
+            />
+          </div>
+        );
+      default:
+        return null;
+    }
+  }
 
   if (isCheckingAuth) {
     return (
@@ -455,11 +484,11 @@ Clinician reviewer`,
 
   return (
     <main className="app-shell">
-      <aside className="sidebar" aria-label="Patient report sections">
+      <aside className="sidebar" aria-label="Case and activity">
         <div>
           <p className="eyebrow">Clinic Dashboard</p>
-          <h1>Patient report</h1>
-          <p className="subtle">One case file, multiple AI-assisted drafts, clinician-controlled sign-off.</p>
+          <h1>First-pass review</h1>
+          <p className="subtle">AI drafts the first pass. You review each step and sign. Nothing is signed without you.</p>
         </div>
 
         {authRequired && (
@@ -479,70 +508,60 @@ Clinician reviewer`,
           <span className={`urgency-chip ${urgency}`}>{urgency}</span>
         </section>
 
-        <nav className="report-tabs" aria-label="Report sections">
-          {reportSections.map((section) => (
-            <button
-              key={section.id}
-              className={activePanel === section.id ? "active" : ""}
-              onClick={() => goToPanel(section.id)}
-              type="button"
-            >
-              <span>{section.label}</span>
-              <small>{section.detail}</small>
-            </button>
-          ))}
-        </nav>
-
-        <label className="upload-button">
-          <span>Upload new source</span>
-          <input type="file" onChange={handleUpload} />
-        </label>
-        {status && <p className="upload-status">{status}</p>}
+        <section className="sidebar-activity" aria-label="Audit trail">
+          <div className="audit-heading">
+            <h3>Activity</h3>
+            <span>{auditLog.length} events</span>
+          </div>
+          <ol className="audit-list">
+            {auditLog.map((event, index) => (
+              <li key={`${event.time}-${event.action}-${index}`}>
+                <time>{event.time}</time>
+                <strong>{event.action}</strong>
+                <span>{event.actor}</span>
+                <p>{event.detail}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
       </aside>
 
       <section className="workspace">
-        <header className="case-header">
+        <ReviewStepper
+          steps={STEPS}
+          currentStep={currentStep}
+          reviewedSteps={reviewedSteps}
+          urgencyByStep={urgencyByStep}
+          onJump={goToStep}
+        />
+
+        <header className="step-header">
           <div>
-            <p className="eyebrow">Active case</p>
-            <h2>{patientLine}</h2>
-            <p>{caseData.patient.summary}</p>
+            <p className="eyebrow">Step {step.n} of {STEPS.length} · {patientLine}</p>
+            <h2>{step.label}</h2>
+            <p className="step-instruction">{step.instruction}</p>
           </div>
           <div className={`urgency-badge ${urgency}`}>{urgency}</div>
         </header>
 
-        <nav className="workflow-rail" aria-label="Case progress">
-          {workflowStages.map((stage, index) => (
-            <button
-              key={stage.id}
-              type="button"
-              className={activeStage === stage.id ? "stage-card active" : `stage-card ${stage.status}`}
-              onClick={() => goToStage(stage)}
-            >
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <strong>{stage.label}</strong>
-            </button>
-          ))}
-        </nav>
-
-        <div className="dashboard-grid">
-          <section className="review-surface" key={activePanel}>{panels[activePanel]}</section>
-          <aside className="audit-panel" aria-label="Audit trail">
-            <div className="audit-heading">
-              <h3>Audit trail</h3>
-              <span>{auditLog.length} events</span>
-            </div>
-            <ol className="audit-list">
-              {auditLog.map((event, index) => (
-                <li key={`${event.time}-${event.action}-${index}`}>
-                  <time>{event.time}</time>
-                  <strong>{event.action}</strong>
-                  <span>{event.actor}</span>
-                  <p>{event.detail}</p>
-                </li>
-              ))}
-            </ol>
-          </aside>
+        <div className="step-body" key={currentStep}>
+          {renderStep()}
         </div>
+
+        <footer className="step-nav">
+          <button className="step-back" type="button" onClick={goBack} disabled={stepIndex === 0}>
+            ← Back
+          </button>
+          {!isLastStep ? (
+            <button className="step-next" type="button" onClick={goNext}>
+              {reviewedSteps.has(currentStep)
+                ? `Next: ${nextStep.label} →`
+                : `Mark reviewed · ${nextStep.label} →`}
+            </button>
+          ) : (
+            <span className="step-final-hint">Review the evidence, then sign the letter to complete the first pass.</span>
+          )}
+        </footer>
       </section>
     </main>
   );

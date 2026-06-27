@@ -971,3 +971,330 @@ th {
     padding: 22px;
   }
 }
+
+/* ============================================================
+   Guided review redesign: stepper, step framing, sign-off rail
+   ============================================================ */
+
+/* --- Audit log relocated into the dark sidebar --- */
+.sidebar-activity {
+  margin-top: auto;
+  border-top: 1px solid rgba(173, 201, 219, 0.18);
+  padding-top: 16px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-activity .audit-heading h3 { color: #eaf4fb; font-size: 1rem; }
+.sidebar-activity .audit-heading span { color: #8aa6bd; }
+.sidebar-activity .audit-list {
+  overflow-y: auto;
+  max-height: 38vh;
+  padding-right: 4px;
+}
+.sidebar-activity .audit-list li { border-left-color: #4f8aa3; }
+.sidebar-activity .audit-list strong { color: #f1f7fc; }
+.sidebar-activity .audit-list time,
+.sidebar-activity .audit-list span { color: #8aa6bd; }
+.sidebar-activity .audit-list p { color: #b8cadb; }
+
+/* --- The stepper: a horizontal spine across the case --- */
+.review-stepper { margin-bottom: 24px; }
+.review-stepper ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+.review-stepper .step button {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  background: #ffffff;
+  border: 1px solid #d9e2ea;
+  border-radius: 10px;
+  padding: 12px 12px 14px;
+  color: #243447;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+/* connector line between steps */
+.review-stepper .step:not(:last-child) button::after {
+  content: "";
+  position: absolute;
+  right: -10px;
+  top: 50%;
+  width: 10px;
+  height: 2px;
+  background: #cfdae3;
+}
+.review-stepper .step-marker {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 0.86rem;
+  background: #eef3f7;
+  color: #5b6978;
+  border: 1px solid #d4dee6;
+}
+.review-stepper .step-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.review-stepper .step-text small {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8595a5;
+}
+.review-stepper .step-text strong {
+  font-size: 0.92rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.review-stepper .step.done .step-marker { background: #2f8f6b; color: #fff; border-color: #2f8f6b; }
+.review-stepper .step.active button {
+  border-color: #1f6f83;
+  box-shadow: 0 10px 22px rgba(31, 70, 92, 0.14);
+  transform: translateY(-2px);
+}
+.review-stepper .step.active .step-marker { background: #1f6f83; color: #fff; border-color: #1f6f83; }
+.review-stepper .step-urgency {
+  margin-left: auto;
+  font-size: 0.6rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+.review-stepper .step-urgency.urgent { background: #ffe1dd; color: #982d20; }
+.review-stepper .step-urgency.soon { background: #fff0c2; color: #73520c; }
+.review-stepper .step-urgency.routine { background: #dff4e8; color: #23613b; }
+
+/* --- Step header (replaces case-header) --- */
+.step-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #d5dde5;
+}
+.step-header h2 { font-size: 1.5rem; margin: 2px 0 0; }
+.step-instruction {
+  max-width: 760px;
+  margin: 8px 0 0;
+  color: #526274;
+  line-height: 1.5;
+}
+
+/* --- Step body surface --- */
+.step-body {
+  background: #ffffff;
+  border: 1px solid #dce3ea;
+  border-radius: 10px;
+  padding: 22px;
+  margin-top: 20px;
+  min-width: 0;
+  animation: surfaceIn 220ms ease both;
+}
+
+/* --- Step navigation footer --- */
+.step-nav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+}
+.step-back {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 8px;
+  border: 1px solid #cdd8e1;
+  background: #ffffff;
+  color: #33475b;
+  font-weight: 700;
+}
+.step-next {
+  margin-left: auto;
+  min-height: 44px;
+  padding: 0 22px;
+  border-radius: 8px;
+  border: 1px solid #1f6f83;
+  background: #1f6f83;
+  color: #ffffff;
+  font-weight: 800;
+}
+.step-next:hover { background: #1b6273; }
+.step-final-hint {
+  margin-left: auto;
+  color: #5b6978;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+/* --- Sign-off: letter + evidence rail side by side --- */
+.signoff-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 22px;
+  align-items: start;
+}
+.signoff-layout .referral-panel { min-width: 0; }
+
+.evidence-rail {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border: 1px solid #dce3ea;
+  border-radius: 10px;
+  background: #f8fbfd;
+  padding: 18px;
+}
+.evidence-heading h4 { margin: 2px 0 0; font-size: 1.05rem; }
+.evidence-block { display: flex; flex-direction: column; gap: 8px; }
+.evidence-block h5 {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #5b6978;
+}
+.evidence-scan {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 1px solid #c9d6e0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #0b1622;
+  position: relative;
+  cursor: zoom-in;
+}
+.evidence-scan img { display: block; width: 100%; max-height: 220px; object-fit: contain; }
+.scan-zoom-hint {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #eaf4fb;
+  background: rgba(7, 18, 30, 0.7);
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+.evidence-impression { margin: 0; font-size: 0.86rem; color: #43586c; line-height: 1.45; }
+.evidence-empty {
+  border: 1px dashed #c2ceda;
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+  color: #5b6978;
+}
+.evidence-empty p { margin: 0 0 8px; font-size: 0.88rem; }
+.evidence-empty button {
+  border: 1px solid #1f6f83;
+  background: #ffffff;
+  color: #1f6f83;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+}
+
+.evidence-labs { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.evidence-labs li {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+}
+.evidence-dot { width: 10px; height: 10px; border-radius: 999px; background: #9aa7b4; }
+.evidence-dot.urgent { background: #d6442f; }
+.evidence-dot.soon { background: #d99411; }
+.evidence-dot.routine { background: #2f8f6b; }
+.evidence-lab-name { font-weight: 700; color: #2b3c4e; }
+.evidence-lab-value { color: #5b6978; grid-column: 2; font-size: 0.78rem; }
+.evidence-flag {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-size: 0.64rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #e6edf5;
+  color: #435468;
+}
+.evidence-flag.high, .evidence-flag.low { background: #ffe1dd; color: #982d20; }
+
+.evidence-redflags { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.evidence-redflags li {
+  font-size: 0.82rem;
+  color: #842029;
+  background: #fdecea;
+  border: 1px solid #f5c2c7;
+  border-radius: 6px;
+  padding: 6px 8px;
+  line-height: 1.35;
+}
+.evidence-dx { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.evidence-dx li { font-size: 0.86rem; color: #2b3c4e; }
+.evidence-dx li small {
+  margin-left: 6px;
+  text-transform: uppercase;
+  font-size: 0.66rem;
+  color: #8595a5;
+  font-weight: 800;
+}
+
+/* --- X-ray lightbox --- */
+.scan-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(6, 14, 22, 0.86);
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  cursor: zoom-out;
+}
+.scan-lightbox img { max-width: 92vw; max-height: 86vh; object-fit: contain; border-radius: 6px; }
+.scan-lightbox-close {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  border: 1px solid rgba(234, 244, 251, 0.5);
+  background: rgba(7, 18, 30, 0.6);
+  color: #eaf4fb;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 8px 14px;
+}
+
+@media (max-width: 1100px) {
+  .review-stepper ol { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+  .review-stepper .step-text strong { font-size: 0.82rem; }
+  .signoff-layout { grid-template-columns: 1fr; }
+  .evidence-rail { position: static; order: -1; }
+}
+
+@media (max-width: 760px) {
+  .review-stepper ol { grid-template-columns: 1fr 1fr; }
+  .review-stepper .step:not(:last-child) button::after { display: none; }
+  .step-nav { flex-wrap: wrap; }
+  .step-next, .step-final-hint { margin-left: 0; width: 100%; text-align: center; }
+}
