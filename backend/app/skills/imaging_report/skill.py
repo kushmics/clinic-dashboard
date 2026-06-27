@@ -165,12 +165,21 @@ class ImagingReportSkill(Skill):
             findings=draft["findings"],
             impression=draft.get("impression", ""),
             regions_of_interest=draft.get("regions_of_interest"),
+            context=data.context,
         )
-        urgency = urgency_result.level
+        urgency = urgency_result.triage_label.lower().replace("-", "_")
         draft["urgency"] = urgency
-        draft["urgency_score"] = urgency_result.score
-        draft["urgency_triggers"] = urgency_result.triggers
-        draft["urgency_breakdown"] = urgency_result.finding_scores
+        draft["triage"] = {
+            "level": urgency_result.triage_level,
+            "label": urgency_result.triage_label,
+            "color": urgency_result.triage_color,
+            "target_minutes": urgency_result.target_minutes,
+            "base_score": urgency_result.base_score,
+            "composite": urgency_result.composite,
+            "modifiers": urgency_result.modifiers,
+            "triggers": urgency_result.triggers,
+            "breakdown": urgency_result.finding_scores,
+        }
 
         # ── Step 5: annotate image with ROIs ────────────────────────────
         annotated_path: str | None = None
