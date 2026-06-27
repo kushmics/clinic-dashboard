@@ -23,10 +23,54 @@ function Badge({ style, children }) {
   );
 }
 
+// Format the draft as a plain-text chart note the clinician can paste straight
+// into the EMR — the admin-time payoff. Facts only; no severity judgement added.
+function buildNote(draft) {
+  const {
+    abnormals = [], unassessed = [], context_used = {},
+    urgency = "routine", summary = "", meta = {},
+  } = draft;
+  const lines = ["LAB TRIAGE — DRAFT (unsigned)", `Urgency: ${urgency.toUpperCase()}`, ""];
+  if (summary) lines.push(summary, "");
+  if (abnormals.length) {
+    lines.push("Abnormal:");
+    for (const a of abnormals) {
+      const val = [a.value, a.unit].filter(Boolean).join(" ");
+      lines.push(`- ${a.analyte} ${val} — ${a.note ?? a.flag}`);
+    }
+    lines.push("");
+  }
+  if (unassessed.length) {
+    lines.push(`Not assessed (${unassessed.length}): `
+      + unassessed.map(x => x.analyte).join(", "), "");
+  }
+  const ctx = [
+    context_used.sex != null && `Sex ${context_used.sex}`
+      + (context_used.sex_source ? ` (${context_used.sex_source})` : ""),
+    context_used.age != null && `Age ${context_used.age}`
+      + (context_used.age_source ? ` (${context_used.age_source})` : ""),
+  ].filter(Boolean).join(" · ");
+  if (ctx) lines.push(`Context: ${ctx}`);
+  const src = [meta.sources?.critical?.name, meta.sources?.ranges?.name].filter(Boolean).join(", ");
+  if (src) lines.push(`Thresholds: ${src}. Reference-table lookups only.`);
+  return lines.join("\n").trim();
+}
+
 export default function LabTriagePanel({ draft, onSign }) {
   const [signed, setSigned] = useState(false);
   const [showNormals, setShowNormals] = useState(false);
+  const [copied, setCopied] = useState(false);
   if (!draft) return null;
+
+  async function copyNote() {
+    try {
+      await navigator.clipboard.writeText(buildNote(draft));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  }
 
   const {
     abnormals = [], unassessed = [], normals = [], assumptions = [],
@@ -152,6 +196,12 @@ export default function LabTriagePanel({ draft, onSign }) {
           style={{ padding: "8px 16px", borderRadius: 8, border: "none", cursor: signed ? "default" : "pointer",
             background: signed ? "#cfd8dc" : "#1b5e20", color: "#fff", fontWeight: 600 }}>
           {signed ? "✓ Reviewed & signed" : "Review & sign"}
+        </button>
+        <button
+          onClick={copyNote}
+          style={{ padding: "8px 16px", borderRadius: 8, cursor: "pointer",
+            background: "#fff", color: "#0b4a73", border: "1px solid #0b4a73", fontWeight: 600 }}>
+          {copied ? "✓ Copied" : "Copy as note"}
         </button>
         <span style={{ fontSize: 12, color: "#5a6b7c" }}>
           Clinician confirms the draft. Nothing is auto-signed.
