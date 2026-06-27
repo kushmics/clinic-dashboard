@@ -139,3 +139,31 @@ Current `schema.json` has only `abnormals / urgency / summary`. Add:
 3. Update `schema.json` per above.
 4. Implement deterministic flag+sort against the two tables; wire OpenAI only for
    extraction and facts-only summary prose.
+
+## Implementation status (built)
+
+All four build tasks are implemented. Map of the skill:
+
+- `reference_data/critical_values.json` (SGH) + `ranges.json` (NUH) — cited tables.
+  A seeded set ships now; expanded by scraping the source pages. Add panels by
+  appending in the same shape — no code change.
+- `reference.py` — table load (cached), alias→canonical→LOINC resolution, unit
+  normalization (no magnitude conversion), sex/age range selection (narrowest
+  envelope when sex unknown → conservative).
+- `extraction.py` — Stage 1. Deterministic JSON/regex parse first; OpenAI
+  vision/text (`OPENAI_API_KEY`) only as fallback / for photos. Pulls age/sex
+  from the report header. Output = inspectable `Measurement` list.
+- `triage.py` — Stage 2. Deterministic: critical (SGH) → printed range, else NUH
+  → unassessed. Never-miss sort, flat urgency, facts-only summary. No LLM.
+- `skill.py` — wires the two stages; `signed` never set.
+- `schema.json` — adds `unassessed`, `normals`, `assumptions`, `context_used`,
+  per-flag `threshold_source` + `provisional` + `delta`.
+
+Front door: `POST /ingestion/upload` (file + optional `sex`/`age`) stores, extracts,
+runs triage, returns the draft. Generic path: `POST /engine/run/lab_triage` with
+`{text, image_path, context}`. Frontend: `panels/LabTriagePanel.jsx`.
+
+Verify (no network / no key):  `.venv/bin/python tests/test_lab_triage.py`  (10 cases).
+
+Still open: OpenAI extraction path needs a key + live test on a real photo/scan;
+delta/trend seam exists but no prior-results source is wired yet.
