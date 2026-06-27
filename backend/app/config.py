@@ -16,10 +16,9 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "Clinic Dashboard API"
-    # AI model layer — OpenAI (sponsor) is the default for vision/text extraction.
-    # The model only EXTRACTS; flagging/severity is deterministic (no LLM).
+    # API-first image/text reasoning via OpenAI vision.
     openai_api_key: str | None = None
-    openai_model: str = "gpt-5.4"   # current-gen vision model; override via env
+    openai_model: str = "gpt-4o-mini"
     # Kept so the alternative provider path is not blocked.
     anthropic_api_key: str | None = None
     anthropic_model: str = "claude-opus-4-8"

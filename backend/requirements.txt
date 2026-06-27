@@ -1,7 +1,7 @@
 # ── Clinic Dashboard — backend base requirements ────────────────────────────
 # Light enough to install now. The heavy *local* ML stack lives in
 # requirements-ml.txt and is only needed if you choose the "local models"
-# AI approach instead of the Claude API. Pins are loose for hackathon speed.
+# AI approach instead of the OpenAI API. Pins are loose for hackathon speed.
 
 # --- Web / API framework ---
 fastapi>=0.111
@@ -12,8 +12,8 @@ pydantic-settings>=2.3
 python-dotenv>=1.0
 httpx>=0.27
 
-# --- AI model layer (sponsor: OpenAI vision/text for extraction only) ---
-openai>=1.40                  # GPT vision/text — extraction stage (not severity)
+# --- AI model layer (OpenAI vision/text for extraction + drafting) ---
+openai>=1.40                  # GPT vision + text
 anthropic>=0.34               # alternative provider; harmless to keep if unused
 
 # --- Image processing (scans, photos of reports) ---
@@ -21,6 +21,8 @@ Pillow>=10.3                  # general image I/O
 numpy>=1.26
 opencv-python-headless>=4.9   # preprocessing: deskew, threshold, crop
 pydicom>=2.4                  # DICOM medical imaging files
+nibabel>=5.2                  # NIfTI CT/MRI volumes (.nii/.nii.gz)
+h5py>=3.11                    # fastMRI HDF5 files (.h5)
 PyMuPDF>=1.24                 # render/extract PDF scans (import: fitz)
 pdf2image>=1.17               # PDF -> images (needs poppler system pkg)
 pytesseract>=0.3.10           # OCR for scanned docs (needs tesseract binary)
@@ -33,6 +35,6 @@ spacy>=3.7                    # tokenization / base NLP pipeline
 
 # --- Medical terms understanding (lightweight layer) ---
 #   For real entity linking to UMLS/SNOMED, enable scispaCy in
-#   requirements-ml.txt OR rely on the Claude API. These help meanwhile:
+#   requirements-ml.txt OR rely on the OpenAI API. These help meanwhile:
 rapidfuzz>=3.9                # fuzzy match against term dictionaries
 # medspacy>=1.0               # rule-based clinical NLP (uncomment if wanted)
