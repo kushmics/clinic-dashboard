@@ -9,7 +9,28 @@
           "condition": { "type": "string" },
           "likelihood": { "type": "string", "enum": ["low", "moderate", "high"] },
           "supporting": { "type": "array", "items": { "type": "string" } },
-          "next_steps": { "type": "array", "items": { "type": "string" } }
+          "next_steps": {
+            "type": "array",
+            "description": "Actionable next steps, each with an Exa-backed citation when EXA_API_KEY is configured.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "action": { "type": "string" },
+                "citation": {
+                  "type": ["object", "null"],
+                  "properties": {
+                    "title": { "type": "string" },
+                    "url": { "type": "string" },
+                    "snippet": { "type": ["string", "null"] },
+                    "query": { "type": "string" },
+                    "source": { "type": "string" }
+                  },
+                  "required": ["title", "url", "query", "source"]
+                }
+              },
+              "required": ["action", "citation"]
+            }
+          }
         },
         "required": ["condition", "likelihood"]
       }

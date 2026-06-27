@@ -81,13 +81,13 @@ class KB:
         kb.red_flags = json.loads((local_kb_dir / 'red_flags.json').read_text(encoding='utf-8')).get('red_flags', [])
         return kb
 
-LAB_VALUE_RE = re.compile(r"(?P<name>[A-Za-z][A-Za-z +]{0,30})s*:?s*(?P<val>[-+]?[0-9]*.?[0-9]+)s*(?P<unit>[/A-Za-z0-9^%um.]+)?", re.IGNORECASE)
+LAB_VALUE_RE = re.compile(r"(?P<name>[A-Za-z][A-Za-z +]{0,30})\s*:?\s*(?P<val>[-+]?[0-9]*\.?[0-9]+)\s*(?P<unit>[/A-Za-z0-9^%µum.]+)?", re.IGNORECASE)
 
 def _match_lab_name(token: str, kb: KB) -> str | None:
     t = token.strip().lower()
     if t in kb.alias_to_code:
         return kb.alias_to_code[t]
-    t2 = re.sub(r's+', ' ', t)
+    t2 = re.sub(r'\s+', ' ', t)
     return kb.alias_to_code.get(t2)
 
 def _select_range(lab: Lab, ctx: dict | None) -> Range | None:

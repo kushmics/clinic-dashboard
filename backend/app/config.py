@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     # API-first image/text reasoning via OpenAI vision.
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
+    # Semantic retrieval layer — Exa attaches verifiable guideline/literature
+    # citations to differential next steps.
+    exa_api_key: str | None = None
     # Kept so the alternative provider path is not blocked.
     anthropic_api_key: str | None = None
     anthropic_model: str = "claude-opus-4-8"
