@@ -1,80 +1,87 @@
 import { useEffect, useMemo, useState } from "react";
-import DifferentialDxPanel from "./panels/DifferentialDxPanel.jsx";
 import ImagingReportPanel from "./panels/ImagingReportPanel.jsx";
 import LabTriagePanel from "./panels/LabTriagePanel.jsx";
 import ReferralLetterPanel from "./panels/ReferralLetterPanel.jsx";
 
-const demoCase = {
-  patient: {
-    id: "PX-1048",
-    name: "Aisha Tan",
-    age: 58,
-    sex: "F",
-    summary:
-      "58-year-old woman with 2 weeks of fatigue, exertional dyspnea, intermittent chest tightness, and poorly controlled diabetes.",
-  },
-  lab_triage: {
-    urgency: "urgent",
-    summary: "Microcytic anemia with elevated inflammatory markers and poor glycemic control.",
-    abnormals: [
-      { name: "Hemoglobin", value: "8.9", unit: "g/dL", flag: "low", urgency: "urgent" },
-      { name: "MCV", value: "72", unit: "fL", flag: "low", urgency: "soon" },
-      { name: "CRP", value: "42", unit: "mg/L", flag: "high", urgency: "soon" },
-      { name: "HbA1c", value: "9.4", unit: "%", flag: "high", urgency: "soon" },
-    ],
-  },
-  imaging_report: {
-    urgency: "soon",
-    findings: [
-      "Chest X-ray draft notes mild cardiomegaly without focal consolidation.",
-      "No pleural effusion or pneumothorax identified on preliminary review.",
-    ],
-    impression: "Mild cardiomegaly. Correlate clinically for anemia-related symptoms and cardiac risk.",
-  },
-  differential_dx: {
-    red_flags: ["Symptomatic anemia with chest tightness", "Diabetes with elevated inflammatory markers"],
-    differentials: [
-      { condition: "Iron deficiency anemia", rationale: "Low hemoglobin with microcytosis." },
-      { condition: "Anemia of chronic inflammation", rationale: "Raised CRP and persistent fatigue." },
-      { condition: "Cardiac ischemia risk", rationale: "Chest tightness in a diabetic patient requires exclusion." },
-    ],
-  },
-};
+const INCOMING_SUMMARY = "New patient record pending CV identification and clinical source scan.";
+
+function createEmptyCase(index = 1) {
+  const id = `INCOMING-${String(index).padStart(3, "0")}`;
+  return {
+    patient: {
+      id,
+      name: "Incoming patient",
+      age: null,
+      sex: "",
+      summary: INCOMING_SUMMARY,
+    },
+    lab_triage: {
+      urgency: "routine",
+      summary: "No clinical source scanned yet.",
+      abnormals: [],
+      normals: [],
+      unassessed: [],
+    },
+    imaging_report: {
+      urgency: "routine",
+      findings: [],
+      impression: "No imaging study uploaded yet.",
+      possible_diagnoses: [],
+      limitations: [],
+    },
+    differential_dx: {
+      red_flags: [],
+      differentials: [],
+    },
+  };
+}
+
+function createIncomingPatient(index = 1) {
+  const caseData = createEmptyCase(index);
+  return {
+    id: caseData.patient.id,
+    status: "incoming",
+    lastSeen: "Awaiting ID",
+    caseData,
+    records: [],
+  };
+}
+
+const initialPatients = [createIncomingPatient(1)];
 
 const initialAudit = [
-  { actor: "System", action: "Case opened", time: "09:12", detail: "Synthetic demo case loaded" },
-  { actor: "AI", action: "Drafts generated", time: "09:13", detail: "Lab, imaging, differential, and referral drafts ready for review" },
+  { actor: "System", action: "Workspace opened", time: "--:--", detail: "Ready for incoming patient intake" },
 ];
 
 const workflowStages = [
-  { id: "upload", label: "Upload", panel: "upload", status: "done" },
-  { id: "drafts", label: "AI drafts", panel: "lab", status: "done" },
-  { id: "review", label: "Review", panel: "dx", status: "active" },
+  { id: "select", label: "Select patient", panel: "patients", status: "done" },
+  { id: "upload", label: "Scan record", panel: "upload", status: "done" },
+  { id: "review", label: "Review", panel: "lab", status: "active" },
   { id: "sign", label: "Sign", panel: "referral", status: "waiting" },
 ];
 
 const reportSections = [
-  { id: "upload", label: "Case intake", detail: "Source files" },
+  { id: "patients", label: "Patients", detail: "Library and incoming" },
+  { id: "upload", label: "Record intake", detail: "Scan source files" },
   { id: "lab", label: "Lab triage", detail: "4 abnormal flags" },
-  { id: "imaging", label: "Imaging report", detail: "Preliminary read" },
-  { id: "dx", label: "Differentials", detail: "3 ranked considerations" },
+  { id: "imaging", label: "Imaging review", detail: "X-ray, CT, MRI" },
   { id: "referral", label: "Referral letter", detail: "Review and sign" },
 ];
 
 const AUTH_TOKEN_STORAGE_KEY = "clinic-dashboard-auth-token";
 
 export default function App() {
+  const [patients, setPatients] = useState(initialPatients);
+  const [activePatientId, setActivePatientId] = useState(initialPatients[0].id);
   const [status, setStatus] = useState("");
-  const [caseData] = useState(demoCase);
-  const [activePanel, setActivePanel] = useState("referral");
-  const [activeStage, setActiveStage] = useState("sign");
+  const [caseData, setCaseData] = useState(initialPatients[0].caseData);
+  const [activePanel, setActivePanel] = useState("patients");
+  const [activeStage, setActiveStage] = useState("select");
   const [auditLog, setAuditLog] = useState(initialAudit);
   const [signedLetters, setSignedLetters] = useState([]);
   const [sentReferrals, setSentReferrals] = useState([]);
   const [generatedReferralDraft, setGeneratedReferralDraft] = useState(null);
   const [isGeneratingReferral, setIsGeneratingReferral] = useState(false);
-  const [generatedDifferentialDraft, setGeneratedDifferentialDraft] = useState(null);
-  const [isGeneratingDifferential, setIsGeneratingDifferential] = useState(false);
   const [generatedImagingDraft, setGeneratedImagingDraft] = useState(null);
   const [xrayPreviewUrl, setXrayPreviewUrl] = useState("");
   const [xrayFile, setXrayFile] = useState(null);
@@ -84,54 +91,53 @@ export default function App() {
   const [authRequired, setAuthRequired] = useState(true);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [generatedLabDraft, setGeneratedLabDraft] = useState(null);
+  const [patientDocumentDraft, setPatientDocumentDraft] = useState(null);
+  const [patientDocumentPreviewUrl, setPatientDocumentPreviewUrl] = useState("");
+  const [patientDocumentFileName, setPatientDocumentFileName] = useState("");
+  const [isExtractingPatientDocument, setIsExtractingPatientDocument] = useState(false);
+  const [sourceUploadMode, setSourceUploadMode] = useState("clinical");
 
   const activeLabDraft = generatedLabDraft ?? caseData.lab_triage;
   const activeImagingDraft = generatedImagingDraft ?? caseData.imaging_report;
-  const activeDifferentialDraft = generatedDifferentialDraft ?? caseData.differential_dx;
   const urgency = activeLabDraft.urgency ?? activeImagingDraft.urgency ?? "routine";
-  const patientLine = `${caseData.patient.name} / ${caseData.patient.age}${caseData.patient.sex} / ${caseData.patient.id}`;
+  const patientLine = `${caseData.patient.name} / ${formatPatientProfile(caseData.patient)} / ${caseData.patient.id}`;
+  const activePatientRecord = patients.find((patient) => patient.id === activePatientId) ?? patients[0];
+  const activeRecords = activePatientRecord?.records ?? [];
+  const abnormalCount = activeLabDraft.abnormals?.length ?? 0;
+  const dynamicReportSections = reportSections.map((section) => {
+    if (section.id === "lab") return { ...section, detail: `${abnormalCount} abnormal flags` };
+    return section;
+  });
 
   const referralDraft = useMemo(
     () => ({
       recipient_specialty: "Internal Medicine",
-      reason_for_referral: "Symptomatic anemia and cardiometabolic risk review",
+      reason_for_referral: activeLabDraft.summary || activeImagingDraft.impression || "Specialist review requested",
       clinical_summary: caseData.patient.summary,
       relevant_findings: [
         ...(activeLabDraft.abnormals ?? []).map(
           (item) => `${item.name ?? item.analyte}: ${item.value} ${item.unit ?? ""} (${item.flag})`
         ),
         ...(activeImagingDraft.findings ?? []),
-        ...(activeDifferentialDraft.red_flags ?? []),
       ],
       letter_markdown: `Dear Internal Medicine Team,
 
 Re: ${caseData.patient.name}
 
-I am referring ${caseData.patient.name} for assessment of symptomatic anemia and cardiometabolic risk.
+I am referring ${caseData.patient.name} for specialist review.
 
 Clinical summary:
 ${caseData.patient.summary}
 
 Relevant findings:
-${(activeLabDraft.abnormals ?? [])
-  .map((item) => `- ${item.name ?? item.analyte}: ${item.value} ${item.unit ?? ""} (${item.flag})`)
-  .join("\n")}
-- ${activeImagingDraft.impression}
-
-Provisional considerations:
-${activeDifferentialDraft.differentials
-  .map((item) => {
-    const rationale = item.rationale ?? item.reason ?? item.supporting?.join("; ");
-    return rationale ? `- ${item.condition}: ${rationale}` : `- ${item.condition}`;
-  })
-  .join("\n")}
+${formatReferralFindings(activeLabDraft, activeImagingDraft)}
 
 Please assess and advise on further management.
 
 Regards,
 Clinician reviewer`,
     }),
-    [caseData, activeDifferentialDraft, activeImagingDraft, activeLabDraft]
+    [caseData, activeImagingDraft, activeLabDraft]
   );
 
   const activeReferralDraft = generatedReferralDraft ?? referralDraft;
@@ -167,6 +173,12 @@ Clinician reviewer`,
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (patientDocumentPreviewUrl) URL.revokeObjectURL(patientDocumentPreviewUrl);
+    };
+  }, [patientDocumentPreviewUrl]);
 
   function saveAuthToken(token) {
     if (token) {
@@ -218,10 +230,102 @@ Clinician reviewer`,
     addAudit("Staff", "Signed out", "Local access token cleared");
   }
 
+  function syncActiveCase(nextCase) {
+    setCaseData(nextCase);
+    setPatients((items) =>
+      items.map((patient) =>
+        patient.id === activePatientId ? { ...patient, id: nextCase.patient.id, caseData: nextCase } : patient
+      )
+    );
+    setActivePatientId(nextCase.patient.id);
+  }
+
+  function updateActivePatientRecord(recordId, updates) {
+    setPatients((items) =>
+      items.map((patient) =>
+        patient.id === activePatientId
+          ? {
+              ...patient,
+              records: patient.records.map((record) =>
+                record.id === recordId ? { ...record, ...updates } : record
+              ),
+            }
+          : patient
+      )
+    );
+  }
+
+  function addActivePatientRecord(record) {
+    setPatients((items) =>
+      items.map((patient) =>
+        patient.id === activePatientId
+          ? { ...patient, records: [record, ...patient.records], status: "incoming", lastSeen: "Today" }
+          : patient
+      )
+    );
+  }
+
+  function handleCreateIncomingPatient() {
+    const nextPatient = createIncomingPatient(patients.length + 1);
+    setPatients((items) => [nextPatient, ...items]);
+    setActivePatientId(nextPatient.id);
+    setCaseData(nextPatient.caseData);
+    setGeneratedLabDraft(null);
+    setGeneratedImagingDraft(null);
+    setGeneratedReferralDraft(null);
+    setPatientDocumentDraft(null);
+    setPatientDocumentFileName("");
+    if (patientDocumentPreviewUrl) URL.revokeObjectURL(patientDocumentPreviewUrl);
+    setPatientDocumentPreviewUrl("");
+    setStatus("");
+    setActivePanel("upload");
+    setActiveStage("upload");
+    addAudit("Staff", "Opened incoming patient", `${nextPatient.id} ready for intake`);
+  }
+
+  function handleSelectPatient(patientId) {
+    const selected = patients.find((patient) => patient.id === patientId);
+    if (!selected) return;
+    setActivePatientId(patientId);
+    setCaseData(selected.caseData);
+    setGeneratedLabDraft(null);
+    setGeneratedImagingDraft(null);
+    setGeneratedReferralDraft(null);
+    setPatientDocumentDraft(null);
+    setPatientDocumentFileName("");
+    setStatus("");
+    if (patientDocumentPreviewUrl) URL.revokeObjectURL(patientDocumentPreviewUrl);
+    setPatientDocumentPreviewUrl("");
+    setActivePanel("upload");
+    setActiveStage("upload");
+    addAudit("Staff", "Selected patient", `${selected.caseData.patient.id} opened from worklist`);
+  }
+
   async function handleUpload(e) {
     const file = e.target.files?.[0];
+    e.target.value = "";
+    await processSourceUpload(file);
+  }
+
+  async function processSourceUpload(file) {
     if (!file) return;
-    setStatus("Uploading...");
+    const recordId = `rec-${Date.now()}`;
+    const category = sourceUploadMode === "imaging" ? "Imaging study" : "Clinical record";
+    const uploadedRecord = {
+      id: recordId,
+      category,
+      name: file.name,
+      status: "Processing",
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+    addActivePatientRecord(uploadedRecord);
+    setStatus(`Processing ${file.name}...`);
+
+    if (sourceUploadMode === "imaging") {
+      await analyzeImagingUpload(file, recordId);
+      return;
+    }
+
     const body = new FormData();
     body.append("file", file);
     body.append("skill", "lab_triage");
@@ -234,52 +338,73 @@ Clinician reviewer`,
         nextLabDraft = result.result.draft;
         setGeneratedLabDraft(nextLabDraft);
         setGeneratedReferralDraft(null);
+        syncActiveCase({ ...caseData, lab_triage: nextLabDraft });
         setActivePanel("lab");
-        setActiveStage("drafts");
+        setActiveStage("review");
+        updateActivePatientRecord(recordId, { status: "AI draft ready", result: "Lab triage" });
+      } else {
+        updateActivePatientRecord(recordId, { status: "Stored", result: "No AI draft" });
       }
       setStatus(`${result.filename} uploaded`);
-      addAudit("Staff", "Uploaded source file", result.filename);
-      if (nextLabDraft) {
-        await generateDifferentialDraft(nextLabDraft, activeImagingDraft, "Uploaded lab routed into differential diagnosis");
-      }
+      addAudit("Staff", "Scanned clinical record", `${result.filename} attached to ${caseData.patient.name}`);
     } catch (err) {
       setStatus("Error: " + err.message);
+      updateActivePatientRecord(recordId, { status: "Needs review", result: err.message });
+      addAudit("System", "Clinical record scan failed", err.message);
     }
   }
 
-  async function generateDifferentialDraft(
-    labDraft = activeLabDraft,
-    imagingDraft = activeImagingDraft,
-    auditDetail = "Lab triage and imaging drafts routed into differential diagnosis"
-  ) {
-    setIsGeneratingDifferential(true);
+  async function handlePatientDocumentUpload(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    await processPatientDocumentUpload(file);
+  }
+
+  async function processPatientDocumentUpload(file) {
+    if (!file) return;
+    setPatientDocumentFileName(file.name);
+    setPatientDocumentDraft(null);
+    if (patientDocumentPreviewUrl) URL.revokeObjectURL(patientDocumentPreviewUrl);
+    setPatientDocumentPreviewUrl(file.type.startsWith("image/") ? URL.createObjectURL(file) : "");
+    setIsExtractingPatientDocument(true);
+
+    const body = new FormData();
+    body.append("file", file);
     try {
-      const res = await authFetch("/api/engine/run/differential_dx", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: caseData.patient.summary,
-          context: {
-            patient: caseData.patient,
-            sex: caseData.patient.sex === "F" ? "female" : caseData.patient.sex === "M" ? "male" : caseData.patient.sex,
-            age: caseData.patient.age,
-            lab_triage: labDraft,
-            imaging_report: imagingDraft,
-          },
-        }),
-      });
-      if (!res.ok) throw new Error(`Differential generation failed (${res.status})`);
+      const res = await authFetch("/api/ingestion/patient-document", { method: "POST", body });
+      if (!res.ok) throw new Error(`Patient document extraction failed (${res.status})`);
       const result = await res.json();
-      setGeneratedDifferentialDraft(result.draft);
-      setGeneratedReferralDraft(null);
-      addAudit("AI", "Generated differential draft", auditDetail);
-      return result.draft;
+      setPatientDocumentDraft(result.draft);
+      addAudit("AI", "Extracted patient details", "Patient document fields ready for staff review");
     } catch (err) {
-      addAudit("System", "Differential generation failed", err.message);
-      return null;
+      setPatientDocumentDraft(createEmptyPatientDocumentDraft(err.message));
+      addAudit("System", "Patient detail extraction failed", err.message);
     } finally {
-      setIsGeneratingDifferential(false);
+      setIsExtractingPatientDocument(false);
     }
+  }
+
+  function handleApplyPatientDetails(draft) {
+    const nextPatient = {
+      ...caseData.patient,
+      name: draft.patient_name || caseData.patient.name,
+      id: draft.patient_id || caseData.patient.id,
+      age: draft.age ?? caseData.patient.age,
+      sex: normalizeSex(draft.sex) || caseData.patient.sex,
+    };
+    const nextCase = {
+      ...caseData,
+      patient: {
+        ...nextPatient,
+        summary:
+          caseData.patient.summary === INCOMING_SUMMARY
+            ? "Patient record opened from incoming intake. Clinical summary pending source review."
+            : caseData.patient.summary,
+      },
+    };
+    syncActiveCase(nextCase);
+    setGeneratedReferralDraft(null);
+    addAudit("Staff", "Applied patient details", "Reviewed CV extraction and updated active case header");
   }
 
   function addAudit(actor, action, detail) {
@@ -317,9 +442,9 @@ Clinician reviewer`,
             patient: caseData.patient,
             lab_triage: activeLabDraft,
             imaging_report: activeImagingDraft,
-            differential_dx: activeDifferentialDraft,
+            differential_dx: caseData.differential_dx,
             recipient_specialty: "Internal Medicine",
-            reason_for_referral: "Symptomatic anemia and cardiometabolic risk review",
+            reason_for_referral: activeLabDraft.summary || activeImagingDraft.impression || "Specialist review requested",
           },
         }),
       });
@@ -340,20 +465,27 @@ Clinician reviewer`,
     }
   }
 
-  function handleXraySelect(file) {
+  function handleImagingSelect(file) {
     setXrayFile(file);
     setGeneratedImagingDraft(null);
     setGeneratedReferralDraft(null);
     if (xrayPreviewUrl) URL.revokeObjectURL(xrayPreviewUrl);
-    setXrayPreviewUrl(URL.createObjectURL(file));
+    setXrayPreviewUrl(file.type.startsWith("image/") ? URL.createObjectURL(file) : "");
     setActivePanel("imaging");
-    setActiveStage("drafts");
-    addAudit("Staff", "Uploaded chest X-ray", file.name);
+    setActiveStage("review");
+    addAudit("Staff", "Selected imaging study", file.name);
   }
 
-  async function handleAnalyzeXray(file = xrayFile) {
+  async function analyzeImagingUpload(file = xrayFile, recordId = null) {
     if (!file) return;
     setIsAnalyzingXray(true);
+    setXrayFile(file);
+    if (file.type.startsWith("image/")) {
+      if (xrayPreviewUrl) URL.revokeObjectURL(xrayPreviewUrl);
+      setXrayPreviewUrl(URL.createObjectURL(file));
+    } else {
+      setXrayPreviewUrl("");
+    }
     const body = new FormData();
     body.append("file", file);
     try {
@@ -363,16 +495,18 @@ Clinician reviewer`,
       const nextImagingDraft = result.draft;
       setGeneratedImagingDraft(nextImagingDraft);
       setGeneratedReferralDraft(null);
+      syncActiveCase({ ...caseData, imaging_report: nextImagingDraft });
       setActivePanel("imaging");
       setActiveStage("review");
-      await generateDifferentialDraft(activeLabDraft, nextImagingDraft, "Imaging draft added to differential context");
+      if (recordId) updateActivePatientRecord(recordId, { status: "AI draft ready", result: nextImagingDraft.modality ?? "Imaging" });
       if (result.draft?.generation_note) {
         addAudit("System", "Imaging generation used fallback", result.draft.generation_note);
       } else {
-        addAudit("AI", "Generated imaging draft", "OpenAI Vision preliminary chest X-ray read ready for clinician review");
+        addAudit("AI", "Generated imaging draft", "Preliminary imaging read ready for clinician review");
       }
     } catch (err) {
       addAudit("System", "Imaging analysis failed", err.message);
+      if (recordId) updateActivePatientRecord(recordId, { status: "Needs review", result: err.message });
     } finally {
       setIsAnalyzingXray(false);
     }
@@ -385,18 +519,38 @@ Clinician reviewer`,
 
   function goToPanel(panel) {
     setActivePanel(panel);
+    if (panel === "patients") setActiveStage("select");
+    if (panel === "upload") setActiveStage("upload");
     if (panel === "referral") setActiveStage("sign");
-    if (panel === "lab" || panel === "imaging") setActiveStage("drafts");
-    if (panel === "dx") setActiveStage("review");
+    if (panel === "lab" || panel === "imaging") setActiveStage("review");
   }
 
   const panels = {
+    patients: (
+      <PatientLibraryPanel
+        activePatientId={activePatientId}
+        onCreateIncomingPatient={handleCreateIncomingPatient}
+        onSelectPatient={handleSelectPatient}
+        patients={patients}
+      />
+    ),
     upload: (
       <CaseIntakePanel
+        records={activeRecords}
         patient={caseData.patient}
         status={status}
         onUpload={handleUpload}
+        onSourceFile={processSourceUpload}
         urgency={urgency}
+        sourceUploadMode={sourceUploadMode}
+        onSourceUploadModeChange={setSourceUploadMode}
+        patientDocumentDraft={patientDocumentDraft}
+        patientDocumentFileName={patientDocumentFileName}
+        patientDocumentPreviewUrl={patientDocumentPreviewUrl}
+        isExtractingPatientDocument={isExtractingPatientDocument}
+        onPatientDocumentUpload={handlePatientDocumentUpload}
+        onPatientDocumentFile={processPatientDocumentUpload}
+        onApplyPatientDetails={handleApplyPatientDetails}
       />
     ),
     lab: <LabTriagePanel draft={activeLabDraft} />,
@@ -406,15 +560,8 @@ Clinician reviewer`,
         imagePreviewUrl={xrayPreviewUrl}
         fileName={xrayFile?.name}
         isAnalyzing={isAnalyzingXray}
-        onImageSelect={handleXraySelect}
-        onAnalyze={handleAnalyzeXray}
-      />
-    ),
-    dx: (
-      <DifferentialDxPanel
-        draft={activeDifferentialDraft}
-        isGenerating={isGeneratingDifferential}
-        onGenerate={() => generateDifferentialDraft()}
+        onImageSelect={handleImagingSelect}
+        onAnalyze={analyzeImagingUpload}
       />
     ),
     referral: (
@@ -449,11 +596,11 @@ Clinician reviewer`,
 
   return (
     <main className="app-shell">
-      <aside className="sidebar" aria-label="Patient report sections">
+      <aside className="sidebar" aria-label="Patient worklist and report sections">
         <div>
           <p className="eyebrow">Clinic Dashboard</p>
-          <h1>Patient report</h1>
-          <p className="subtle">One case file, multiple AI-assisted drafts, clinician-controlled sign-off.</p>
+          <h1>Patient library</h1>
+          <p className="subtle">Select a patient, scan incoming records, and review AI-assisted drafts.</p>
         </div>
 
         {authRequired && (
@@ -462,19 +609,29 @@ Clinician reviewer`,
           </button>
         )}
 
-        <section className="sidebar-case-card" aria-label="Patient summary">
-          <div>
-            <span className="case-avatar">{caseData.patient.name.split(" ").map((part) => part[0]).join("")}</span>
-            <div>
-              <strong>{caseData.patient.name}</strong>
-              <small>{caseData.patient.age}{caseData.patient.sex} / {caseData.patient.id}</small>
-            </div>
-          </div>
-          <span className={`urgency-chip ${urgency}`}>{urgency}</span>
+        <section className="sidebar-patient-list" aria-label="Patient worklist">
+          {patients.map((patient) => {
+            const profile = patient.caseData.patient;
+            return (
+              <button
+                key={patient.id}
+                className={patient.id === activePatientId ? "active" : ""}
+                type="button"
+                onClick={() => handleSelectPatient(patient.id)}
+              >
+                <span className="case-avatar">{getPatientInitials(profile.name)}</span>
+                <span>
+                  <strong>{profile.name}</strong>
+                  <small>{formatPatientProfile(profile)} / {profile.id}</small>
+                </span>
+                <em>{patient.status}</em>
+              </button>
+            );
+          })}
         </section>
 
         <nav className="report-tabs" aria-label="Report sections">
-          {reportSections.map((section) => (
+          {dynamicReportSections.map((section) => (
             <button
               key={section.id}
               className={activePanel === section.id ? "active" : ""}
@@ -488,7 +645,7 @@ Clinician reviewer`,
         </nav>
 
         <label className="upload-button">
-          <span>Upload new source</span>
+          <span>Scan into selected chart</span>
           <input type="file" onChange={handleUpload} />
         </label>
         {status && <p className="upload-status">{status}</p>}
@@ -586,22 +743,142 @@ function AuthScreen({ error, onSignIn }) {
   );
 }
 
-function CaseIntakePanel({ patient, status, onUpload, urgency }) {
+function PatientLibraryPanel({ activePatientId, onCreateIncomingPatient, onSelectPatient, patients }) {
+  const incoming = patients.filter((patient) => patient.status === "incoming");
+  const library = patients.filter((patient) => patient.status !== "incoming");
+
+  return (
+    <section className="support-panel patient-library-panel">
+      <div className="panel-heading">
+        <div>
+          <p className="eyebrow">Patient worklist</p>
+          <h3>Library and incoming records</h3>
+        </div>
+        <button className="create-patient-button" type="button" onClick={onCreateIncomingPatient}>
+          New incoming
+        </button>
+      </div>
+
+      <PatientGroup
+        activePatientId={activePatientId}
+        label="Incoming"
+        onSelectPatient={onSelectPatient}
+        patients={incoming}
+      />
+      <PatientGroup
+        activePatientId={activePatientId}
+        label="Library"
+        onSelectPatient={onSelectPatient}
+        patients={library}
+      />
+    </section>
+  );
+}
+
+function PatientGroup({ activePatientId, label, onSelectPatient, patients }) {
+  return (
+    <section className="patient-group">
+      <h4>{label}</h4>
+      <div className="patient-card-grid">
+        {patients.length === 0 ? (
+          <div className="empty-worklist">No patients in this queue yet.</div>
+        ) : patients.map((patient) => {
+          const profile = patient.caseData.patient;
+          const latestRecord = patient.records[0];
+          return (
+            <button
+              key={patient.id}
+              className={patient.id === activePatientId ? "patient-card active" : "patient-card"}
+              type="button"
+              onClick={() => onSelectPatient(patient.id)}
+            >
+              <span className="case-avatar">{getPatientInitials(profile.name)}</span>
+              <strong>{profile.name}</strong>
+              <small>{formatPatientProfile(profile)} / {profile.id}</small>
+              <span>{latestRecord ? `${latestRecord.category}: ${latestRecord.status}` : "No records scanned"}</span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function CaseIntakePanel({
+  records,
+  patient,
+  status,
+  onUpload,
+  onSourceFile,
+  urgency,
+  sourceUploadMode,
+  onSourceUploadModeChange,
+  patientDocumentDraft,
+  patientDocumentFileName,
+  patientDocumentPreviewUrl,
+  isExtractingPatientDocument,
+  onPatientDocumentUpload,
+  onPatientDocumentFile,
+  onApplyPatientDetails,
+}) {
+  const [isSourceDragging, setIsSourceDragging] = useState(false);
+  const [isIdentityDragging, setIsIdentityDragging] = useState(false);
+  const hasApplicablePatientDetails = Boolean(
+    patientDocumentDraft?.patient_name ||
+      patientDocumentDraft?.patient_id ||
+      patientDocumentDraft?.age ||
+      patientDocumentDraft?.sex
+  );
+
   return (
     <section className="support-panel intake-panel">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Case intake</p>
-          <h3>Upload source</h3>
+          <p className="eyebrow">Record intake</p>
+          <h3>Scan into selected patient chart</h3>
         </div>
         <span className={`urgency-badge ${urgency}`}>{urgency}</span>
       </div>
 
+      <div className="intake-mode-row">
+        <span>Incoming source type</span>
+        <div className="segmented-control">
+          <button
+            className={sourceUploadMode === "clinical" ? "active" : ""}
+            type="button"
+            onClick={() => onSourceUploadModeChange("clinical")}
+          >
+            Clinical
+          </button>
+          <button
+            className={sourceUploadMode === "imaging" ? "active" : ""}
+            type="button"
+            onClick={() => onSourceUploadModeChange("imaging")}
+          >
+            Imaging
+          </button>
+        </div>
+      </div>
+
       <div className="intake-grid">
-        <label className="drop-zone">
-          <span>Drop lab, scan, or note</span>
-          <small>{status || "Ready for clinical source upload"}</small>
-          <input type="file" onChange={onUpload} />
+        <label
+          className={isSourceDragging ? "drop-zone dragging" : "drop-zone"}
+          onDragEnter={(event) => handleDragEnter(event, setIsSourceDragging)}
+          onDragOver={(event) => handleDragEnter(event, setIsSourceDragging)}
+          onDragLeave={(event) => handleDragLeave(event, setIsSourceDragging)}
+          onDrop={(event) => handleDrop(event, setIsSourceDragging, onSourceFile)}
+        >
+          <span>{sourceUploadMode === "imaging" ? "Drop imaging study" : "Drop clinical record"}</span>
+          <small>{status || "Drag a file here or click to browse"}</small>
+          <input
+            accept={
+              sourceUploadMode === "imaging"
+                ? "image/*,.dcm,.dicom,.nii,.nii.gz,.h5"
+                : "image/*,.pdf,.docx,.txt,.csv,.json,.md"
+            }
+            type="file"
+            onChange={onUpload}
+          />
         </label>
         <dl className="case-facts">
           <div>
@@ -618,6 +895,245 @@ function CaseIntakePanel({ patient, status, onUpload, urgency }) {
           </div>
         </dl>
       </div>
+
+      <section className="record-ledger" aria-label="Patient records">
+        <div className="panel-heading compact">
+          <div>
+            <p className="eyebrow">Patient database</p>
+            <h4>Records in chart</h4>
+          </div>
+          <span>{records.length} files</span>
+        </div>
+        {records.length > 0 ? (
+          <ol>
+            {records.map((record) => (
+              <li key={record.id}>
+                <strong>{record.name}</strong>
+                <span>{record.category}</span>
+                <em>{record.status}</em>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p>No records scanned for this patient yet.</p>
+        )}
+      </section>
+
+
+      <div className="identity-extraction">
+        <div className="panel-heading compact">
+          <div>
+            <p className="eyebrow">Computer vision intake</p>
+            <h4>Patient document extraction</h4>
+          </div>
+          {patientDocumentDraft && (
+            <span className={`confidence-badge ${patientDocumentDraft.confidence}`}>
+              {patientDocumentDraft.confidence} confidence
+            </span>
+          )}
+        </div>
+
+        <div className="identity-grid">
+          <label
+            className={isIdentityDragging ? "identity-upload dragging" : "identity-upload"}
+            onDragEnter={(event) => handleDragEnter(event, setIsIdentityDragging)}
+            onDragOver={(event) => handleDragEnter(event, setIsIdentityDragging)}
+            onDragLeave={(event) => handleDragLeave(event, setIsIdentityDragging)}
+            onDrop={(event) => handleDrop(event, setIsIdentityDragging, onPatientDocumentFile)}
+          >
+            {patientDocumentPreviewUrl ? (
+              <img src={patientDocumentPreviewUrl} alt="Patient document preview" />
+            ) : (
+              <>
+                <span>Upload ID, report, or booklet</span>
+                <small>Drag a file here or click to browse</small>
+              </>
+            )}
+            <input accept="image/*,.pdf" type="file" onChange={onPatientDocumentUpload} />
+          </label>
+
+          <div className="identity-review">
+            <div className="identity-review-header">
+              <strong>{patientDocumentFileName || "No patient document uploaded"}</strong>
+              {isExtractingPatientDocument && <span>Extracting...</span>}
+            </div>
+
+            {patientDocumentDraft ? (
+              <>
+                {patientDocumentDraft.needs_review && (
+                  <div className="review-required">Review required before applying to case</div>
+                )}
+
+                <dl className="identity-fields">
+                  <IdentityField label="Document" value={patientDocumentDraft.document_type || "Unknown"} />
+                  <IdentityField
+                    confidence={getFieldConfidence(patientDocumentDraft, "patient_name")}
+                    evidence={getExtractionEvidence(patientDocumentDraft, "patient_name")}
+                    label="Name"
+                    value={patientDocumentDraft.patient_name}
+                  />
+                  <IdentityField
+                    confidence={getFieldConfidence(patientDocumentDraft, "patient_id")}
+                    evidence={getExtractionEvidence(patientDocumentDraft, "patient_id")}
+                    label={patientDocumentDraft.patient_id_type || "Patient ID"}
+                    value={patientDocumentDraft.patient_id}
+                  />
+                  <IdentityField
+                    confidence={getFieldConfidence(patientDocumentDraft, "date_of_birth")}
+                    evidence={getExtractionEvidence(patientDocumentDraft, "date_of_birth")}
+                    label="Date of birth"
+                    value={patientDocumentDraft.date_of_birth}
+                  />
+                  <IdentityField
+                    confidence={getFieldConfidence(patientDocumentDraft, "age")}
+                    evidence={getExtractionEvidence(patientDocumentDraft, "age")}
+                    label="Age"
+                    value={patientDocumentDraft.age ? `${patientDocumentDraft.age}y` : ""}
+                  />
+                  <IdentityField
+                    confidence={getFieldConfidence(patientDocumentDraft, "sex")}
+                    evidence={getExtractionEvidence(patientDocumentDraft, "sex")}
+                    label="Sex"
+                    value={patientDocumentDraft.sex}
+                  />
+                  <IdentityField label="Image quality" value={patientDocumentDraft.source_quality} />
+                </dl>
+
+                {patientDocumentDraft.warnings?.length > 0 && (
+                  <ul className="identity-warnings">
+                    {patientDocumentDraft.warnings.map((warning) => (
+                      <li key={warning}>{warning}</li>
+                    ))}
+                  </ul>
+                )}
+
+                <button
+                  className="apply-details-button"
+                  disabled={isExtractingPatientDocument || !hasApplicablePatientDetails}
+                  type="button"
+                  onClick={() => onApplyPatientDetails(patientDocumentDraft)}
+                >
+                  Apply reviewed details
+                </button>
+              </>
+            ) : (
+              <p>
+                This step uses CV/OCR to pre-fill patient details. Staff must confirm the fields
+                before applying them to the active case.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
     </section>
   );
+}
+
+function IdentityField({ confidence, evidence, label, value }) {
+  return (
+    <div>
+      <dt>
+        <span>{label}</span>
+        {confidence && <em className={`field-confidence ${confidence}`}>{confidence}</em>}
+      </dt>
+      <dd>{formatIdentityValue(value)}</dd>
+      {evidence && <small>{evidence}</small>}
+    </div>
+  );
+}
+
+function handleDragEnter(event, setDragging) {
+  event.preventDefault();
+  event.stopPropagation();
+  setDragging(true);
+}
+
+function handleDragLeave(event, setDragging) {
+  event.preventDefault();
+  event.stopPropagation();
+  if (!event.currentTarget.contains(event.relatedTarget)) {
+    setDragging(false);
+  }
+}
+
+function handleDrop(event, setDragging, onFile) {
+  event.preventDefault();
+  event.stopPropagation();
+  setDragging(false);
+  const file = event.dataTransfer.files?.[0];
+  if (file) onFile?.(file);
+}
+
+function normalizeSex(value) {
+  const text = String(value || "").trim().toLowerCase();
+  if (["f", "female", "woman"].includes(text)) return "F";
+  if (["m", "male", "man"].includes(text)) return "M";
+  return "";
+}
+
+function formatIdentityValue(value) {
+  if (value === null || value === undefined || value === "") return "Not detected";
+  return String(value);
+}
+
+function getFieldConfidence(draft, field) {
+  return draft?.field_confidence?.[field] || "";
+}
+
+function getExtractionEvidence(draft, field) {
+  return draft?.extraction_evidence?.[field] || "";
+}
+
+function getPatientInitials(name) {
+  return String(name || "?")
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function formatPatientProfile(patient) {
+  if (!patient?.age && !patient?.sex) return "Profile pending";
+  return `${patient.age || "?"}${patient.sex || ""}`;
+}
+
+function formatReferralFindings(labDraft, imagingDraft) {
+  const labFindings = (labDraft.abnormals ?? []).map(
+    (item) => `- ${item.name ?? item.analyte}: ${item.value} ${item.unit ?? ""} (${item.flag})`
+  );
+  const imagingImpression = imagingDraft.impression ? [`- ${imagingDraft.impression}`] : [];
+  const findings = [...labFindings, ...imagingImpression];
+  return findings.length > 0 ? findings.join("\n") : "- No structured findings attached yet.";
+}
+
+function createEmptyPatientDocumentDraft(message) {
+  return {
+    document_type: "unknown",
+    patient_name: "",
+    patient_id: "",
+    patient_id_type: "",
+    date_of_birth: "",
+    age: null,
+    sex: "",
+    source_quality: "poor",
+    confidence: "low",
+    field_confidence: {
+      patient_name: "low",
+      patient_id: "low",
+      date_of_birth: "low",
+      age: "low",
+      sex: "low",
+    },
+    extraction_evidence: {
+      patient_name: "",
+      patient_id: "",
+      date_of_birth: "",
+      age: "",
+      sex: "",
+    },
+    needs_review: true,
+    warnings: [message],
+  };
 }

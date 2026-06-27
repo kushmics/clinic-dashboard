@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 // Track B. Renders imaging_report draft: scan viewer + ROI overlay + impression.
 export default function ImagingReportPanel({
   draft,
@@ -7,6 +9,7 @@ export default function ImagingReportPanel({
   onImageSelect,
   onAnalyze,
 }) {
+  const [isDragging, setIsDragging] = useState(false);
   const possibleDiagnoses = draft?.possible_diagnoses ?? [];
   const limitations = draft?.limitations ?? [];
 
@@ -15,12 +18,34 @@ export default function ImagingReportPanel({
     if (file) onImageSelect?.(file);
   }
 
+  function handleDrag(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(true);
+  }
+
+  function handleDragLeave(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!event.currentTarget.contains(event.relatedTarget)) {
+      setIsDragging(false);
+    }
+  }
+
+  function handleDrop(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(false);
+    const file = event.dataTransfer.files?.[0];
+    if (file) onImageSelect?.(file);
+  }
+
   return (
     <section className="support-panel">
       <div className="panel-heading">
         <div>
           <p className="eyebrow">Track B draft</p>
-          <h3>Chest X-ray preliminary review</h3>
+          <h3>Imaging preliminary review</h3>
         </div>
         <span className={`urgency-badge ${draft?.urgency ?? "routine"}`}>{draft?.urgency ?? "routine"}</span>
       </div>
@@ -28,19 +53,27 @@ export default function ImagingReportPanel({
       {draft?.generation_note && <p className="generation-note">{draft.generation_note}</p>}
 
       <div className="imaging-workbench">
-        <div className="scan-viewer">
+        <div
+          className={isDragging ? "scan-viewer dragging" : "scan-viewer"}
+          onDragEnter={handleDrag}
+          onDragOver={handleDrag}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
           {imagePreviewUrl ? (
-            <img src={imagePreviewUrl} alt="Uploaded chest X-ray preview" />
+            <img src={imagePreviewUrl} alt="Uploaded imaging study preview" />
+          ) : fileName ? (
+            <span>{fileName} ready for analysis</span>
           ) : (
-            <span>Upload chest X-ray</span>
+            <span>Upload X-ray, CT, MRI, or scan</span>
           )}
         </div>
         <div className="scan-actions">
           <label className="image-upload-button">
-            <span>{fileName || "Choose X-ray image"}</span>
-            <input accept="image/*" type="file" onChange={handleFileChange} />
+            <span>{fileName || "Choose imaging study"}</span>
+            <input accept="image/*,.dcm,.dicom,.nii,.nii.gz,.h5" type="file" onChange={handleFileChange} />
           </label>
-          <button type="button" onClick={() => onAnalyze?.()} disabled={!imagePreviewUrl || isAnalyzing}>
+          <button type="button" onClick={() => onAnalyze?.()} disabled={!fileName || isAnalyzing}>
             {isAnalyzing ? "Analyzing..." : "Run AI preliminary read"}
           </button>
           <p>
