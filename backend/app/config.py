@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     # The model only EXTRACTS; flagging/severity is deterministic (no LLM).
     openai_api_key: str | None = None
     openai_model: str = "gpt-5.4"   # current-gen vision model; override via env
+    # Semantic retrieval layer — Exa attaches verifiable guideline/literature
+    # citations to differential next steps.
+    exa_api_key: str | None = None
     # Kept so the alternative provider path is not blocked.
     anthropic_api_key: str | None = None
     anthropic_model: str = "claude-opus-4-8"

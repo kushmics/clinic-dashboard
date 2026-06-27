@@ -1,7 +1,8 @@
 import time, sys, json, pathlib
-sys.path.insert(0, r"D:\Buildathon2026")
-sys.path.insert(0, r"D:\Buildathon2026\backend")
-from backend.app.skills.differential_dx.kb import KB, parse_labs_from_text, flag_observations, score_conditions, evaluate_red_flags
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[3]))
+
+from app.skills.differential_dx.kb import KB, parse_labs_from_text, flag_observations, score_conditions, evaluate_red_flags
 
 dir = pathlib.Path(__file__).parent / 'fixtures'
 kb = KB.load()
